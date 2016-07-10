@@ -4,10 +4,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.lang.Runnable;
 import java.awt.event.KeyEvent;
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.IOException;
 import java.util.Random;
+import java.awt.Graphics2D;
 
 class Isle implements Runnable{
 	
@@ -32,7 +30,7 @@ public Isle(int seedx, int seedy){
 		this.seedx=seedx;
 		this.seedy=seedy;
 		landplayer=null;
-		Tree.setSprites();
+		//Tree.setSprites();
 		rainfall=new Rainfall();
 }
 
@@ -152,7 +150,7 @@ public Isle(int seedx, int seedy){
 					layout[i][j]=LandType.grass;
 					if(objects[i][j]==null){
 						if((new Random()).nextInt(5)<2)
-							objects[i][j]=new Tree();
+								objects[i][j]=new FractalTree();
 					}
 				}
 			}	
@@ -161,8 +159,15 @@ public Isle(int seedx, int seedy){
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
 				if(layout[i][j]!=LandType.water && (new Random()).nextInt(20)==0){
+					int rnd=(new Random()).nextInt(20);
 					objects[i][j]=new LandObject();
-					objects[i][j].inventoryGive(Item.stick , 1+(new Random()).nextInt(2));
+					if(rnd<10)
+						objects[i][j].inventoryGive(Item.stick , 1+(new Random()).nextInt(2));
+					else if(rnd<18)
+						objects[i][j].inventoryGive(Item.berries , 1+(new Random()).nextInt(2));
+					else
+						objects[i][j].inventoryGive(Item.stone , 1+(new Random()).nextInt(2));
+					
 				}
 			}
 		}
@@ -190,7 +195,10 @@ public Isle(int seedx, int seedy){
 		if(px!=landplayer.x || py!=landplayer.y)
 			if(landplayer.x>=0 && landplayer.x<layout.length && landplayer.y>=0 && landplayer.y<layout[0].length){
 				if(layout[landplayer.x][landplayer.y]!=LandType.water){
-					if(objects[landplayer.x][landplayer.y]==null || objects[landplayer.x][landplayer.y].getClass()!=Tree.class){
+					if(objects[landplayer.x][landplayer.y]==null || !(
+					 objects[landplayer.x][landplayer.y].getClass()==Tree.class ||
+					!objects[landplayer.x][landplayer.y].getClass().isAssignableFrom(Tree.class)
+					)){
 						objects[landplayer.x][landplayer.y]=objects[px][py];
 						objects[px][py]=null;
 						moved=true;
@@ -224,16 +232,12 @@ public Isle(int seedx, int seedy){
 					}
 					
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
-						g.drawImage(objects[i+landplayer.x][j+landplayer.y].getSprite(), 
-						(numtiles+i)*scalex,(numtiles+j)*scaley,null);	
+						objects[i+landplayer.x][j+landplayer.y].paint((Graphics2D)g,i+numtiles,j+numtiles,scalex);
 					}
 					
 				}
 			}	
 		}
-		g.setColor(Color.green);
-		g.fillRect(numtiles*scalex,numtiles*scaley,scalex,scaley);
-		
 		
 		rainfall.paint(g,screenwidth,screenheight);
 	}
@@ -244,79 +248,6 @@ public Isle(int seedx, int seedy){
 	}
 
 }
-
-class LandObject{
-		static BufferedImage sprites[];
-		
-		Inventory inventory;
-		
-		public BufferedImage getSprite(){
-			return inventory.getSprite();
-		}
-		
-		public void inventoryGive(Item newitem , int amount){
-			inventory=new Inventory();
-			inventory.give(newitem , amount);
-		}
-		
-		protected static void maskSpriteColour(Color c){
-			if(sprites==null)
-				return;
-			
-			int rgb=c.getRGB();
-			int maskcolour=(new Color(255,0,255,0)).getRGB();
-			
-			for(int sindex=0; sindex<sprites.length; sindex++){
-				for(int i=0; i<sprites[sindex].getWidth(); i++){
-					for(int j=0; j<sprites[sindex].getHeight(); j++){
-						if(sprites[sindex].getRGB(i,j)==rgb){
-							sprites[sindex].setRGB(i,j,maskcolour);
-						}
-					}
-				}	
-			}
-		}
-	}
-	
-	class LandPlayer extends LandObject{
-		Color c=new Color(100 , 100, 25);
-		public int x, y;
-		
-		public void wantedMove(){
-			
-				if(KeyBoard.returnKeyPress()==KeyEvent.VK_UP){
-					y--;
-				}
-				if(KeyBoard.returnKeyPress()==KeyEvent.VK_DOWN)
-					y++;
-				if(KeyBoard.returnKeyPress()==KeyEvent.VK_LEFT)
-					x--;
-				if(KeyBoard.returnKeyPress()==KeyEvent.VK_RIGHT)
-					x++;
-		}
-	}
-	
-	class Tree extends LandObject{
-		
-		//best singleton pattern 
-		static void setSprites(){
-			if(sprites==null){
-				sprites=new BufferedImage[1];
-		
-				try{
-					sprites[0]=ImageIO.read(new File("jungle_tree.png"));
-					maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
-					
-				}catch(IOException e){
-			
-				}
-			}
-		}
-		
-		public BufferedImage getSprite(){
-			return sprites[0];
-		}
-	}
 	
 	class Raindrop{
 		static BufferedImage image=new BufferedImage(20,20, BufferedImage.TYPE_INT_ARGB);
@@ -374,7 +305,7 @@ class LandObject{
 			for(int i=0; i<rain.length; i++){
 				g.drawImage(Raindrop.image, (int)rain[i].x , (int)rain[i].y , null);
 			}
-			if(active && (new Random()).nextInt(4)==0)
+			if(active && (new Random()).nextInt(10)!=0)
 				g.drawImage(clouds,0,0,null);
 		}
 	}

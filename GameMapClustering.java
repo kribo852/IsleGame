@@ -44,7 +44,6 @@ public static void main(String[] args){
 	BufferedImage drawbuffer=new BufferedImage(screensize,screensize,BufferedImage.TYPE_INT_ARGB);
 	Graphics drawbuffergraphics=drawbuffer.getGraphics();
 	while(true){
-		
 		map.update();
 		
 		drawbuffergraphics.drawImage(sea, 0, 0, null);
