@@ -124,8 +124,12 @@ public Isle(int seedx, int seedy){
 	}
 	
 	public void initializeLand(){
+		
 		if(landplayer!=null)
 			return;
+			
+		LandObject[] treemap=new LandObject[15];
+		int treeindex=0;
 		
 		objects=new LandObject[layout.length][layout[0].length];
 		
@@ -149,8 +153,14 @@ public Isle(int seedx, int seedy){
 				if(nowateraround){
 					layout[i][j]=LandType.grass;
 					if(objects[i][j]==null){
-						if((new Random()).nextInt(5)<2)
-								objects[i][j]=new FractalTree();
+						if((new Random()).nextInt(5)<2){
+								if(treemap[treeindex]==null){
+									treemap[treeindex]=new FractalTree();
+								}
+								
+								objects[i][j]=treemap[treeindex];
+								treeindex=(treeindex+1)%treemap.length;
+						}
 					}
 				}
 			}	
@@ -230,14 +240,22 @@ public Isle(int seedx, int seedy){
 						g.setColor(l.getColour());
 						g.fillRect((numtiles+i)*scalex,(numtiles+j)*scaley,scalex,scaley);
 					}
+				}
+			}	
+		}
+		
+		//painting trees
+		for(int i=-numtiles; i<numtiles; i++){
+			for(int j=-numtiles; j<numtiles; j++){
+				if(i+landplayer.x>=0 && i+landplayer.x<layout.length && j+landplayer.y>=0 && j+landplayer.y<layout[0].length){
 					
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
 						objects[i+landplayer.x][j+landplayer.y].paint((Graphics2D)g,i+numtiles,j+numtiles,scalex);
 					}
-					
 				}
 			}	
 		}
+		
 		
 		rainfall.paint(g,screenwidth,screenheight);
 	}

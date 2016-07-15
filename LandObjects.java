@@ -1,0 +1,168 @@
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+import java.awt.event.KeyEvent;
+import java.awt.Graphics2D;
+import java.awt.BasicStroke;
+import java.util.Random;
+import java.awt.Graphics;
+
+class LandObject{
+		static BufferedImage sprites[];
+		
+		Inventory inventory;
+		
+		public BufferedImage getSprite(){
+			return inventory.getSprite();
+		}
+		
+		public void inventoryGive(Item newitem , int amount){
+			inventory=new Inventory();
+			inventory.give(newitem , amount);
+		}
+		
+		protected static void maskSpriteColour(Color c){
+			if(sprites==null)
+				return;
+			
+			int rgb=c.getRGB();
+			int maskcolour=(new Color(255,0,255,0)).getRGB();
+			
+			for(int sindex=0; sindex<sprites.length; sindex++){
+				for(int i=0; i<sprites[sindex].getWidth(); i++){
+					for(int j=0; j<sprites[sindex].getHeight(); j++){
+						if(sprites[sindex].getRGB(i,j)==rgb){
+							sprites[sindex].setRGB(i,j,maskcolour);
+						}
+					}
+				}	
+			}
+		}
+		
+		public void paint(Graphics g, int x, int y, int tilesize){
+			g.drawImage(inventory.getSprite(), x*tilesize,  y*tilesize, tilesize, tilesize,null);
+		}
+		
+	}
+	
+	class LandPlayer extends LandObject{
+		Color c=new Color(100 , 100, 25);
+		public int x, y;
+		
+		public void wantedMove(){
+			
+				if(KeyBoard.returnKeyPress()==KeyEvent.VK_UP){
+					y--;
+				}
+				if(KeyBoard.returnKeyPress()==KeyEvent.VK_DOWN)
+					y++;
+				if(KeyBoard.returnKeyPress()==KeyEvent.VK_LEFT)
+					x--;
+				if(KeyBoard.returnKeyPress()==KeyEvent.VK_RIGHT)
+					x++;
+		}
+		
+		public void paint(Graphics g, int x, int y, int tilesize){
+			g.setColor(Color.green.darker());
+			g.fillRect(x*tilesize,y*tilesize,tilesize,tilesize);
+		}
+		
+	}
+	
+	class Tree extends LandObject{
+		
+		//best singleton pattern 
+		static void setSprites(){
+			if(sprites==null){
+				sprites=new BufferedImage[1];
+		
+				try{
+					sprites[0]=ImageIO.read(new File("jungle_tree.png"));
+					maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
+					
+				}catch(IOException e){
+			
+				}
+			}
+		}
+		
+		public BufferedImage getSprite(){
+			return sprites[0];
+		}
+		
+		public void paint(Graphics g, int x, int y, int tilesize){
+			g.drawImage(getSprite(), x*tilesize,  y*tilesize, tilesize, tilesize,null);
+		}
+		
+	}
+
+class FractalTree extends Tree{
+
+	static Color barkColour=new Color(75 ,75 , 50);
+	static Color[] leafcolour=new Color[]{new Color(50, 100, 0), new Color(50, 100, 0) , new Color(175, 100, 25)};
+	double firstlength=15, spread=Math.PI/3, deviation=Math.PI/4;
+	Branch trunk;
+	
+	class Branch{
+		double angle, length;
+		
+		Branch[] next;
+		
+		public Branch(int depth, double length, double angle){
+			this.length=length;
+			this.angle=angle;
+			
+			if(depth>=6)
+			return;
+			
+			next=new Branch[(new Random()).nextInt(3)+1];
+			
+			double startangle=angle-((next.length-1)/2.0)*spread;
+			
+			
+			for(int i=0; i<next.length; i++){
+				next[i]=new Branch(++depth, length*0.95, startangle+spread*i+(new Random()).nextDouble()*deviation);
+			}		
+		}
+		
+		public void paint(Graphics g, int x, int y){paint((Graphics2D)g, x, y, 8, 0);}
+		
+		private void paint(Graphics2D g, double x, double y, int broadness, int countleafcolour){
+			
+			g.setStroke(new BasicStroke(broadness));
+		
+			if(next!=null)
+				g.setColor(barkColour);
+			else{
+				g.setColor(leafcolour[countleafcolour]);
+				g.setStroke(new BasicStroke(broadness+1));
+			}
+		
+			g.drawLine((int)x , (int)y,
+			(int)(length*Math.cos(angle)+x),
+			(int)(length*Math.sin(angle)+y));
+			
+			if(next!=null && broadness>0){
+				for(Branch branch: next){
+					countleafcolour++;
+					countleafcolour%=leafcolour.length;
+					branch.paint(g, length*Math.cos(angle)+x , length*Math.sin(angle)+y, broadness-1, countleafcolour);
+				}
+			}
+		}
+	}
+	
+	public FractalTree(){trunk=new Branch(0,15,3*Math.PI/2);}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		if(trunk!=null){
+			trunk.paint(g,x*tilesize+tilesize/2,y*tilesize+tilesize/2);
+		}
+	}
+	
+	public void free(){
+		trunk=null;
+	}
+}
