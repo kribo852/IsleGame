@@ -101,7 +101,7 @@ class LandObject{
 class FractalTree extends Tree{
 
 	static Color barkColour=new Color(75 ,75 , 50);
-	static Color[] leafcolour=new Color[]{new Color(50, 100, 0), new Color(50, 100, 0) , new Color(175, 100, 25)};
+	static Color[] leafcolour=new Color[]{new Color(50, 100, 0), new Color(50, 100, 0) , new Color(175, 100, 25), new Color(75, 150, 25)};
 	double firstlength=15, spread=Math.PI/3, deviation=Math.PI/4;
 	Branch trunk;
 	
@@ -114,7 +114,7 @@ class FractalTree extends Tree{
 			this.length=length;
 			this.angle=angle;
 			
-			if(depth>=6)
+			if(depth>=5)
 			return;
 			
 			next=new Branch[(new Random()).nextInt(3)+1];
@@ -127,9 +127,9 @@ class FractalTree extends Tree{
 			}		
 		}
 		
-		public void paint(Graphics g, int x, int y){paint((Graphics2D)g, x, y, 8, 0);}
+		public void paint(Graphics g, int x, int y, double windangle){paint((Graphics2D)g, x, y, 8, 0, windangle,0);}
 		
-		private void paint(Graphics2D g, double x, double y, int broadness, int countleafcolour){
+		private void paint(Graphics2D g, double x, double y, int broadness, int countleafcolour, final double windangle,double depth){
 			
 			g.setStroke(new BasicStroke(broadness));
 		
@@ -137,32 +137,84 @@ class FractalTree extends Tree{
 				g.setColor(barkColour);
 			else{
 				g.setColor(leafcolour[countleafcolour]);
-				g.setStroke(new BasicStroke(broadness+1));
+				g.setStroke(new BasicStroke(broadness));
 			}
 		
 			g.drawLine((int)x , (int)y,
-			(int)(length*Math.cos(angle)+x),
-			(int)(length*Math.sin(angle)+y));
+			(int)(length*Math.cos(angle+depth*windangle)+x),
+			(int)(length*Math.sin(angle+depth*windangle)+y));
 			
 			if(next!=null && broadness>0){
 				for(Branch branch: next){
 					countleafcolour++;
 					countleafcolour%=leafcolour.length;
-					branch.paint(g, length*Math.cos(angle)+x , length*Math.sin(angle)+y, broadness-1, countleafcolour);
+					branch.paint(g, length*Math.cos(angle+depth*windangle)+x , length*Math.sin(angle+depth*windangle)+y, broadness-1, countleafcolour, windangle,depth+1);
 				}
 			}
 		}
 	}
 	
-	public FractalTree(){trunk=new Branch(0,15,3*Math.PI/2);}
+	public FractalTree(){trunk=new Branch(0,12,3*Math.PI/2);}
 	
-	public void paint(Graphics g, int x, int y, int tilesize){
+	public void paint(Graphics g, int x, int y, int tilesize, double windangle){
 		if(trunk!=null){
-			trunk.paint(g,x*tilesize+tilesize/2,y*tilesize+tilesize/2);
+			trunk.paint(g,x*tilesize+tilesize/2,y*tilesize+tilesize/2, windangle);
 		}
 	}
 	
 	public void free(){
 		trunk=null;
 	}
+}
+
+class BushMan extends LandObject{
+	
+	private static final int[][]image=
+	   {{0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0},
+		{0,0,0,1,1,0,1,0,1,1,0,0,0,0,0,0},
+		{0,0,0,1,1,0,1,0,1,1,0,0,0,0,0,0},
+		{0,0,0,1,1,0,0,0,1,1,0,0,0,0,0,0},
+		{0,0,0,0,1,1,0,1,1,0,0,0,0,0,0,0},
+		{0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0},
+		{0,0,0,0,0,1,1,1,0,0,0,0,0,1,0,0},
+		{0,0,0,0,1,0,1,0,1,0,0,0,1,0,0,0},
+		{0,0,0,1,0,0,1,0,0,1,0,1,0,0,0,0},
+		{0,0,1,0,0,1,1,1,0,0,1,0,0,0,0,0},
+		{0,1,0,0,1,0,0,1,0,0,0,0,0,0,0,0},
+		{0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,0},
+		{0,0,0,0,1,0,0,1,1,0,0,0,0,0,0,0},
+		{0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0},
+		{0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0}};
+		
+	public BushMan(){
+		if(sprites==null){
+			setSprites();
+			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
+		}
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		sprites=new BufferedImage[1];
+		sprites[0]=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB);
+		Graphics g=sprites[0].getGraphics();
+		
+		g.setColor(Color.cyan);
+		g.fillRect(0, 0  ,sprites[0].getWidth() ,sprites[0].getHeight());
+		g.setColor(new Color(50,35,10));
+				
+		for(int i=0; i<image.length; i++){
+			for(int j=0; j<image[i].length; j++){
+				if(image[i][j]==1)
+					g.fillRect(j*2, i*2 ,2 ,2);
+			}
+		}					
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+			//System.out.println("#############");
+	}
+	
 }

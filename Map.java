@@ -145,7 +145,7 @@ public Map(){
 	}
 	
 	public void refreshSquare(int x , int y){
-		if(randomNumber(x+old_player_x, y+old_player_y)%350==0){
+		if(randomNumber(x+old_player_x, y+old_player_y)%350==0 || (x+old_player_x==(sizex/2)-1 && y+old_player_y==(sizey/2)-1)){
 			ilands[x][y]=new Isle(x+old_player_x, y+old_player_y);
 			new Thread(ilands[x][y]).start();
 		}else{

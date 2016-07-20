@@ -12,10 +12,12 @@ class Isle implements Runnable{
 static final int islesize=320;
 LandType[][] layout;
 LandObject[][] objects;
+int[][] distance_to_sea;
 BufferedImage tile;
 int seedx,seedy;//used to generate diff islands
 LandPlayer landplayer;//null if at sea
 Rainfall rainfall;
+AICoordinator aicoordinator;
 
 	class Tuple<Type>{
 		public Type a,b;
@@ -128,10 +130,12 @@ public Isle(int seedx, int seedy){
 		if(landplayer!=null)
 			return;
 			
-		LandObject[] treemap=new LandObject[15];
+		LandObject[] treemap=new LandObject[75];
 		int treeindex=0;
 		
 		objects=new LandObject[layout.length][layout[0].length];
+		
+		distance_to_sea=calculateSeaDistance(layout);
 		
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
@@ -153,7 +157,8 @@ public Isle(int seedx, int seedy){
 				if(nowateraround){
 					layout[i][j]=LandType.grass;
 					if(objects[i][j]==null){
-						if((new Random()).nextInt(5)<2){
+						double treeChance=Math.exp(-0.025*distance_to_sea[i][j]);
+						if((new Random()).nextDouble()>treeChance){
 								if(treemap[treeindex]==null){
 									treemap[treeindex]=new FractalTree();
 								}
@@ -168,16 +173,20 @@ public Isle(int seedx, int seedy){
 		
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
-				if(layout[i][j]!=LandType.water && (new Random()).nextInt(20)==0){
-					int rnd=(new Random()).nextInt(20);
-					objects[i][j]=new LandObject();
-					if(rnd<10)
-						objects[i][j].inventoryGive(Item.stick , 1+(new Random()).nextInt(2));
-					else if(rnd<18)
-						objects[i][j].inventoryGive(Item.berries , 1+(new Random()).nextInt(2));
-					else
-						objects[i][j].inventoryGive(Item.stone , 1+(new Random()).nextInt(2));
+				if(layout[i][j]!=LandType.water){
+					if((new Random()).nextInt(100)==0){
+						int rnd=(new Random()).nextInt(20);
+						objects[i][j]=new LandObject();
+						if(rnd<10)
+							objects[i][j].inventoryGive(Item.stick , 1+(new Random()).nextInt(2));
+						else if(rnd<18)
+							objects[i][j].inventoryGive(Item.berries , 1+(new Random()).nextInt(2));
+						else
+							objects[i][j].inventoryGive(Item.stone , 1+(new Random()).nextInt(2));
 					
+					}else if((new Random()).nextInt(1000)==0){
+						objects[i][j]=new BushMan();
+					}
 				}
 			}
 		}
@@ -193,6 +202,7 @@ public Isle(int seedx, int seedy){
 		}
 		
 		objects[landplayer.x][landplayer.y]=landplayer;
+		aicoordinator=new AICoordinator();
 	}
 	
 	public boolean updateLand(){
@@ -203,27 +213,45 @@ public Isle(int seedx, int seedy){
 		{
 		boolean moved=false;
 		if(px!=landplayer.x || py!=landplayer.y)
-			if(landplayer.x>=0 && landplayer.x<layout.length && landplayer.y>=0 && landplayer.y<layout[0].length){
-				if(layout[landplayer.x][landplayer.y]!=LandType.water){
-					if(objects[landplayer.x][landplayer.y]==null || !(
-					 objects[landplayer.x][landplayer.y].getClass()==Tree.class ||
-					!objects[landplayer.x][landplayer.y].getClass().isAssignableFrom(Tree.class)
-					)){
-						objects[landplayer.x][landplayer.y]=objects[px][py];
-						objects[px][py]=null;
-						moved=true;
-					}
-				}
-			}
-			if(!moved){
+			if(landplayer.x>=0 && landplayer.x<layout.length && landplayer.y>=0 && landplayer.y<layout[0].length
+			&& validMovePosition(landplayer.x, landplayer.y)){
+					objects[landplayer.x][landplayer.y]=objects[px][py];
+					objects[px][py]=null;
+					moved=true;
+					
+				}else{
 				landplayer.x=px;
 				landplayer.y=py;
 			}
 		}
+		int[] npcmoved=aicoordinator.update(objects);
+		
+			if(npcmoved!=null){
+			if(objects[npcmoved[0]][npcmoved[1]].getClass()==BushMan.class){
+			
+				if(validMovePosition(npcmoved[2],npcmoved[3])){
+					objects[npcmoved[2]][npcmoved[3]]=objects[npcmoved[0]][npcmoved[1]];
+					objects[npcmoved[0]][npcmoved[1]]=null;
+				}
+			}
+		}
+		
 		
 		rainfall.update();
 		
-		return (layout[landplayer.x][landplayer.y]==LandType.dirt && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
+		return (distance_to_sea[landplayer.x][landplayer.y]==1 && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
+	}
+	
+	boolean validMovePosition(int x, int y){
+		if(layout[x][y]!=LandType.water){
+					if(objects[x][y]==null || !(
+					 objects[x][y].getClass()==Tree.class ||
+					!objects[x][y].getClass().isAssignableFrom(Tree.class)
+					)){
+						return true;
+					}
+			}
+		return false;
 	}
 	
 	public void paintOnLand(Graphics g, int screenwidth , int screenheight){
@@ -240,6 +268,8 @@ public Isle(int seedx, int seedy){
 						g.setColor(l.getColour());
 						g.fillRect((numtiles+i)*scalex,(numtiles+j)*scaley,scalex,scaley);
 					}
+					g.setColor(Color.black);
+					//g.drawString(""+distance_to_sea[i+landplayer.x][j+landplayer.y], (numtiles+i)*scalex,(numtiles+j)*scaley);
 				}
 			}	
 		}
@@ -250,7 +280,15 @@ public Isle(int seedx, int seedy){
 				if(i+landplayer.x>=0 && i+landplayer.x<layout.length && j+landplayer.y>=0 && j+landplayer.y<layout[0].length){
 					
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
-						objects[i+landplayer.x][j+landplayer.y].paint((Graphics2D)g,i+numtiles,j+numtiles,scalex);
+						
+						if(objects[i+landplayer.x][j+landplayer.y].getClass()==FractalTree.class){
+							double angle=rainfall.getWindAngle()+Math.PI*(i+j/3.0)/50;
+							angle=(Math.PI/20)*Math.sin(angle);
+							((FractalTree)objects[i+landplayer.x][j+landplayer.y]).paint(g,i+numtiles,j+numtiles,scalex,angle);
+						}else{
+							objects[i+landplayer.x][j+landplayer.y].paint((Graphics2D)g,i+numtiles,j+numtiles,scalex);
+						}
+						
 					}
 				}
 			}	
@@ -264,7 +302,60 @@ public Isle(int seedx, int seedy){
 		if(tile!=null)
 			g.drawImage(tile, x, y, (int)(layout.length*0.4) , (int)(layout[0].length*0.4) , null);
 	}
-
+	
+	int[][] calculateSeaDistance(LandType[][] layout){
+		int[][] rtn=new int[layout.length][layout[0].length];
+		ArrayList<int[]> positions=new ArrayList<int[]>();
+		for(int i=0; i<rtn.length; i++){
+			for(int j=0; j<rtn[i].length; j++){
+				rtn[i][j]=-1;
+				
+				if(i==0 || j==0 || i==rtn.length-1 || j==rtn[0].length-1){
+					
+					if(layout[i][j]==LandType.water){
+						rtn[i][j]=0;
+					}else{
+						rtn[i][j]=1;
+					}
+					
+					positions.add(new int[]{i,j});
+				}
+				
+			}	
+		}
+		
+		while(!positions.isEmpty()){
+			int[] tmp=positions.remove(0);
+			
+			for(int i=-1; i<2; i++)
+				for(int j=-1; j<2; j++){
+					if(i!=0 || j!=0){
+					
+						if(tmp[0]+i>=0 && tmp[0]+i<rtn.length && 
+						   tmp[1]+j>=0 && tmp[1]+j<rtn[0].length){
+						
+							if(rtn[tmp[0]+i][tmp[1]+j]==-1){
+								if(rtn[tmp[0]][tmp[1]]==0 && layout[tmp[0]+i][tmp[1]+j]==LandType.water){
+									rtn[tmp[0]+i][tmp[1]+j]=0;
+								}else{
+									rtn[tmp[0]+i][tmp[1]+j]=rtn[tmp[0]][tmp[1]]+1;
+								}
+								positions.add(new int[]{tmp[0]+i, tmp[1]+j});
+							
+							}else if(rtn[tmp[0]+i][tmp[1]+j]>rtn[tmp[0]][tmp[1]]+1){
+								if(rtn[tmp[0]][tmp[1]]==0 && layout[tmp[0]+i][tmp[1]+j]==LandType.water){
+									rtn[tmp[0]+i][tmp[1]+j]=0;
+								}else{
+									rtn[tmp[0]+i][tmp[1]+j]=rtn[tmp[0]][tmp[1]]+1;
+								}
+								positions.add(new int[]{tmp[0]+i, tmp[1]+j});
+							}
+						}
+					}	
+				}	
+		}
+		return rtn;
+	}
 }
 	
 	class Raindrop{
@@ -289,18 +380,19 @@ public Isle(int seedx, int seedy){
 		int chance=750;
 		BufferedImage clouds=new BufferedImage(800,800, BufferedImage.TYPE_INT_ARGB);
 		Raindrop[] rain;
+		double windangle=0;//used for sinus winds in trees
 		
 		public Rainfall(){
 			Graphics g=clouds.getGraphics();
 			g.setColor(new Color(0,25,25,35));
 			g.fillRect(0,0,clouds.getWidth(),clouds.getHeight());
 			Raindrop.initializeBuffer();
-			rain=new Raindrop[250];
+			rain=new Raindrop[300];
 		
 			for(int i=0; i<rain.length; i++){
 				rain[i]=new Raindrop();
 				rain[i].angle=Math.PI/2+Math.PI*0.1*(new Random()).nextDouble();
-				rain[i].speed=10+5*(new Random()).nextDouble();
+				rain[i].speed=5+5*(new Random()).nextDouble();
 				rain[i].y=(new Random()).nextInt(1000);
 				rain[i].x=(new Random()).nextInt(1000);
 			}	
@@ -317,6 +409,7 @@ public Isle(int seedx, int seedy){
 				}
 			}
 			active= (new Random()).nextInt(chance)==0 ? !active : active;
+			windangle+=(Math.PI/100)%Math.PI;
 		}
 		
 		public void paint(Graphics g , int screenwidth, int screenheight){
@@ -326,4 +419,9 @@ public Isle(int seedx, int seedy){
 			if(active && (new Random()).nextInt(10)!=0)
 				g.drawImage(clouds,0,0,null);
 		}
+		
+		public double getWindAngle(){
+			return windangle;
+		}
+		
 	}

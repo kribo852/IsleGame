@@ -57,9 +57,9 @@ enum Item{
 		g2d.fillRect(0,0,image.getWidth(), image.getHeight());
 		
 		Random rnd=new Random();
-		for(int i=0; i<5; i++){
-			g2d.setColor(new Color(rnd.nextInt(255),rnd.nextInt(255),rnd.nextInt(255),255));
-			g2d.fillOval(rnd.nextInt(image.getWidth()),rnd.nextInt(image.getHeight()), 8+rnd.nextInt(4), 8+rnd.nextInt(4));
+		for(int i=0; i<4; i++){
+			g2d.setColor(new Color(150+rnd.nextInt(50),rnd.nextInt(200),rnd.nextInt(50),255));
+			g2d.fillOval(8+rnd.nextInt(image.getWidth()-16),8+rnd.nextInt(image.getHeight()-16), 8+rnd.nextInt(4), 8+rnd.nextInt(4));
 		}
 	}
 	
