@@ -9,9 +9,10 @@ import java.awt.Graphics2D;
 
 class Isle implements Runnable{
 	
-static final int islesize=320;
+int islesize=320;
 LandType[][] layout;
 LandObject[][] objects;
+
 int[][] distance_to_sea;
 BufferedImage tile;
 int seedx,seedy;//used to generate diff islands
@@ -28,9 +29,10 @@ AICoordinator aicoordinator;
 		}	
 	}
 
-public Isle(int seedx, int seedy){
+public Isle(int seedx, int seedy, int islesize){
 		this.seedx=seedx;
 		this.seedy=seedy;
+		this.islesize=islesize;
 		landplayer=null;
 		//Tree.setSprites();
 		rainfall=new Rainfall();
@@ -167,6 +169,8 @@ public Isle(int seedx, int seedy){
 								treeindex=(treeindex+1)%treemap.length;
 						}
 					}
+				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.dirt){
+					layout[i][j]=LandType.clay;
 				}
 			}	
 		}
@@ -174,15 +178,11 @@ public Isle(int seedx, int seedy){
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
 				if(layout[i][j]!=LandType.water){
-					if((new Random()).nextInt(100)==0){
+					if((new Random()).nextInt(200)==0){
 						int rnd=(new Random()).nextInt(20);
 						objects[i][j]=new LandObject();
-						if(rnd<10)
-							objects[i][j].inventoryGive(Item.stick , 1+(new Random()).nextInt(2));
-						else if(rnd<18)
-							objects[i][j].inventoryGive(Item.berries , 1+(new Random()).nextInt(2));
-						else
-							objects[i][j].inventoryGive(Item.stone , 1+(new Random()).nextInt(2));
+						objects[i][j].inventoryGive(InventoryFactory.createGroundInventory());
+						
 					
 					}else if((new Random()).nextInt(1000)==0){
 						objects[i][j]=new BushMan();
@@ -194,7 +194,6 @@ public Isle(int seedx, int seedy){
 		landplayer=new LandPlayer();
 		landplayer.x=layout.length/2;
 		landplayer.y=layout[0].length/2;
-		landplayer.inventoryGive(Item.stick , 0);
 		
 		while(layout[landplayer.x][landplayer.y]!=LandType.dirt){
 			landplayer.x=(new Random()).nextInt(layout.length);
@@ -203,6 +202,8 @@ public Isle(int seedx, int seedy){
 		
 		objects[landplayer.x][landplayer.y]=landplayer;
 		aicoordinator=new AICoordinator();
+		
+		new Thread(rainfall).start();
 	}
 	
 	public boolean updateLand(){
@@ -215,20 +216,28 @@ public Isle(int seedx, int seedy){
 		if(px!=landplayer.x || py!=landplayer.y)
 			if(landplayer.x>=0 && landplayer.x<layout.length && landplayer.y>=0 && landplayer.y<layout[0].length
 			&& validMovePosition(landplayer.x, landplayer.y)){
+					//items on this spot
+					if(objects[landplayer.x][landplayer.y]!=null){
+						objects[px][py].inventoryGive(objects[landplayer.x][landplayer.y].returnInventory());
+					}
+				
 					objects[landplayer.x][landplayer.y]=objects[px][py];
 					objects[px][py]=null;
 					moved=true;
 					
 				}else{
-				landplayer.x=px;
-				landplayer.y=py;
-			}
+					landplayer.x=px;
+					landplayer.y=py;
+				}
 		}
+		
+		landplayer.updateInventory();
+		
 		int[] npcmoved=aicoordinator.update(objects);
 		
 			if(npcmoved!=null){
 			if(objects[npcmoved[0]][npcmoved[1]].getClass()==BushMan.class){
-			
+			if(npcmoved[2]>=0 && npcmoved[2]<layout.length && npcmoved[3]>=0 && npcmoved[3]<layout[0].length)
 				if(validMovePosition(npcmoved[2],npcmoved[3])){
 					objects[npcmoved[2]][npcmoved[3]]=objects[npcmoved[0]][npcmoved[1]];
 					objects[npcmoved[0]][npcmoved[1]]=null;
@@ -236,9 +245,9 @@ public Isle(int seedx, int seedy){
 			}
 		}
 		
-		
-		rainfall.update();
-		
+		if(rainfall.update()){
+			new Thread(rainfall).start();
+		}	
 		return (distance_to_sea[landplayer.x][landplayer.y]==1 && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
 	}
 	
@@ -265,11 +274,9 @@ public Isle(int seedx, int seedy){
 				if(i+landplayer.x>=0 && i+landplayer.x<layout.length && j+landplayer.y>=0 && j+landplayer.y<layout[0].length){
 					LandType l=layout[i+landplayer.x][j+landplayer.y];
 					if(l!=LandType.water){
-						g.setColor(l.getColour());
-						g.fillRect((numtiles+i)*scalex,(numtiles+j)*scaley,scalex,scaley);
+						g.drawImage(LandTexture.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom square
 					}
 					g.setColor(Color.black);
-					//g.drawString(""+distance_to_sea[i+landplayer.x][j+landplayer.y], (numtiles+i)*scalex,(numtiles+j)*scaley);
 				}
 			}	
 		}
@@ -293,9 +300,11 @@ public Isle(int seedx, int seedy){
 				}
 			}	
 		}
-		
-		
+			
 		rainfall.paint(g,screenwidth,screenheight);
+		
+		if(distance_to_sea[landplayer.x][landplayer.y]==1)
+			Tooltip.paintSailTip(g);
 	}
 	
 	public void paintAtSea(Graphics g , int x , int y){
@@ -359,69 +368,107 @@ public Isle(int seedx, int seedy){
 }
 	
 	class Raindrop{
-		static BufferedImage image=new BufferedImage(20,20, BufferedImage.TYPE_INT_ARGB);
-		double x , y , speed , angle;
-		static final int red=25, green=75, blue=125;
+		static BufferedImage image=new BufferedImage(16,16, BufferedImage.TYPE_INT_ARGB);
+		double x , y , dx, dy;
+		static final Color raincoloured=new Color(25,100,85);
+		static final Color firecoloured=new Color(200,185,25);
 		
 		
 		static public void initializeBuffer(){
 			for(int i=0; i<image.getWidth(); i++){
 				for(int j=0; j<image.getHeight(); j++){
-					double distance=0.35*Math.sqrt(Math.pow(9.5-i,2)+Math.pow(9.5-j,2));
-					int alpha=(int)(255*Math.pow(Math.E , -distance));
-					image.setRGB(i,j, (new Color(red,green,blue,alpha)).getRGB());
+					double distance=0.25*Math.sqrt(Math.pow(image.getWidth()/2-i-0.5,2)+Math.pow(image.getWidth()/2-j-0.5,2));
+					int alpha=(int)(200*Math.pow(Math.E , -distance));
+					Color c=new Color(raincoloured.getRGB());
+					c=new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
+					image.setRGB(i,j, c.getRGB());
 				}
 			}
 		} 
 	}
 	
-	class Rainfall{
+	class Rainfall implements Runnable{
 		boolean active=true;
-		int chance=750;
-		BufferedImage clouds=new BufferedImage(800,800, BufferedImage.TYPE_INT_ARGB);
+		int timer=500;
+		BufferedImage rainbuffer[]=new BufferedImage[2];
 		Raindrop[] rain;
 		double windangle=0;//used for sinus winds in trees
+		int currentframe=0;
+		boolean nextframeready=false;;
 		
 		public Rainfall(){
-			Graphics g=clouds.getGraphics();
-			g.setColor(new Color(0,25,25,35));
-			g.fillRect(0,0,clouds.getWidth(),clouds.getHeight());
 			Raindrop.initializeBuffer();
-			rain=new Raindrop[300];
+			rain=new Raindrop[750];
 		
 			for(int i=0; i<rain.length; i++){
 				rain[i]=new Raindrop();
-				rain[i].angle=Math.PI/2+Math.PI*0.1*(new Random()).nextDouble();
-				rain[i].speed=5+5*(new Random()).nextDouble();
+				double angle=Math.PI/2+Math.PI*0.2*(new Random()).nextDouble();
+				double speed=10+6*(new Random()).nextDouble();
+				rain[i].dx=speed*Math.cos(angle);
+				rain[i].dy=speed*Math.sin(angle);
 				rain[i].y=(new Random()).nextInt(1000);
 				rain[i].x=(new Random()).nextInt(1000);
 			}	
+			
+			rainbuffer[0]=new BufferedImage(800,800, BufferedImage.TYPE_INT_ARGB);
+			rainbuffer[1]=new BufferedImage(800,800, BufferedImage.TYPE_INT_ARGB);
 		}
 		
-		public void update(){
+		public void run(){
+			int updateframe= (currentframe+1)%rainbuffer.length;
+			
 			for(int i=0; i<rain.length; i++){
 				if(active && rain[i].y>1000){
 					rain[i].y=-(new Random()).nextInt(1000);
 					rain[i].x=-100+(new Random()).nextInt(1000);
 				}else{
-					rain[i].x+=rain[i].speed*Math.cos(rain[i].angle);
-					rain[i].y+=rain[i].speed*Math.sin(rain[i].angle);
+					rain[i].x+=rain[i].dx;
+					rain[i].y+=rain[i].dy;
 				}
 			}
-			active= (new Random()).nextInt(chance)==0 ? !active : active;
-			windangle+=(Math.PI/100)%Math.PI;
-		}
-		
-		public void paint(Graphics g , int screenwidth, int screenheight){
+			
+			Graphics g=rainbuffer[updateframe].getGraphics();
+			if(active)
+				((Graphics2D)g).setBackground(new Color(25, 50, 50, 25));
+			else
+				((Graphics2D)g).setBackground(new Color(255, 255, 255, 0));
+			g.clearRect(0,0,800, 800);
+			
 			for(int i=0; i<rain.length; i++){
 				g.drawImage(Raindrop.image, (int)rain[i].x , (int)rain[i].y , null);
 			}
-			if(active && (new Random()).nextInt(10)!=0)
-				g.drawImage(clouds,0,0,null);
+			
+			nextframeready=true;
+		}
+		
+		public boolean update(){
+			boolean rtn=nextframeready;
+			if(nextframeready){
+				nextframeready=false;
+				currentframe=(currentframe+1)%rainbuffer.length;
+			}
+			
+			--timer;
+			if(timer<=0){
+				if(active)
+					timer=(new Random()).nextInt(2500);
+				else
+					timer=(new Random()).nextInt(750);
+				
+				active=!active;
+			}
+			windangle+=(Math.PI/100)%Math.PI;
+			
+			return rtn;
+		}
+		
+		public void paint(Graphics g , int screenwidth, int screenheight){
+			
+			g.drawImage(rainbuffer[currentframe], 0 , 0 , null);
+			
 		}
 		
 		public double getWindAngle(){
 			return windangle;
 		}
-		
 	}

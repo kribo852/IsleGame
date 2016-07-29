@@ -39,7 +39,7 @@ public static void main(String[] args){
 		g.drawImage(drawbuffer, 0, 0 , null);
 		
 		try {
-			Thread.sleep(35);
+			Thread.sleep(25);
 		} catch(InterruptedException ex) {
 			Thread.currentThread().interrupt();
 		}

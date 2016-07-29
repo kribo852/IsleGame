@@ -12,15 +12,26 @@ import java.awt.Graphics;
 class LandObject{
 		static BufferedImage sprites[];
 		
-		Inventory inventory;
+		Inventory inventory=null;
 		
 		public BufferedImage getSprite(){
 			return inventory.getSprite();
 		}
 		
-		public void inventoryGive(Item newitem , int amount){
-			inventory=new Inventory();
-			inventory.give(newitem , amount);
+		public void inventoryGive(Inventory other){
+			if(inventory==null)
+				inventory=new Inventory();
+			inventory.give(other);
+		}
+		
+		public void inventoryGive(Item item, int amount){
+			if(inventory==null)
+				inventory=new Inventory();
+			inventory.give(item, amount);
+		}
+		
+		public Inventory returnInventory(){
+			return inventory;
 		}
 		
 		protected static void maskSpriteColour(Color c){
@@ -47,9 +58,17 @@ class LandObject{
 		
 	}
 	
-	class LandPlayer extends LandObject{
+	class LandPlayer extends Humanoid{
 		Color c=new Color(100 , 100, 25);
-		public int x, y;
+		PlayerInventory inventory=null;
+		
+		public LandPlayer(){
+			inventory=InventoryFactory.createPlayerInventory();//also gives some starting items
+			if(sprites==null){
+				setSprites();
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
+			}
+		}
 		
 		public void wantedMove(){
 			
@@ -64,9 +83,28 @@ class LandObject{
 					x++;
 		}
 		
+		public Inventory updateInventory(){
+			
+			return inventory.update();
+		}
+		
+		public void inventoryGive(Inventory other){
+			if(inventory==null)
+				inventory=new PlayerInventory();
+			inventory.give(other);
+		}
+		
+		public void inventoryGive(Item item, int amount){
+			if(inventory==null)
+				inventory=new PlayerInventory();
+			inventory.give(item, amount);
+		}
+		
 		public void paint(Graphics g, int x, int y, int tilesize){
-			g.setColor(Color.green.darker());
-			g.fillRect(x*tilesize,y*tilesize,tilesize,tilesize);
+			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+			
+			if(inventory!=null)
+				inventory.paint(g);
 		}
 		
 	}
@@ -167,9 +205,10 @@ class FractalTree extends Tree{
 	}
 }
 
-class BushMan extends LandObject{
+abstract class Humanoid extends LandObject{
 	
-	private static final int[][]image=
+	protected int x, y;
+	protected static final int[][]manimage=
 	   {{0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0},
 		{0,0,0,1,1,0,1,0,1,1,0,0,0,0,0,0},
 		{0,0,0,1,1,0,1,0,1,1,0,0,0,0,0,0},
@@ -187,14 +226,7 @@ class BushMan extends LandObject{
 		{0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0},
 		{0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0}};
 		
-	public BushMan(){
-		if(sprites==null){
-			setSprites();
-			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
-		}
-	}
-	
-	//best singleton pattern 
+		//best singleton pattern 
 	static void setSprites(){
 		sprites=new BufferedImage[1];
 		sprites[0]=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB);
@@ -204,17 +236,36 @@ class BushMan extends LandObject{
 		g.fillRect(0, 0  ,sprites[0].getWidth() ,sprites[0].getHeight());
 		g.setColor(new Color(50,35,10));
 				
-		for(int i=0; i<image.length; i++){
-			for(int j=0; j<image[i].length; j++){
-				if(image[i][j]==1)
+		for(int i=0; i<manimage.length; i++){
+			for(int j=0; j<manimage[i].length; j++){
+				if(manimage[i][j]==1)
 					g.fillRect(j*2, i*2 ,2 ,2);
 			}
 		}					
+	}
+	
+	public abstract void wantedMove();
+	public abstract Inventory updateInventory();
+	
+}
+
+class BushMan extends Humanoid{
+	
+	
+		
+	public BushMan(){
+		if(sprites==null){
+			setSprites();
+			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
+		}
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
 			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
 			//System.out.println("#############");
 	}
+	
+	public Inventory updateInventory(){return null;}
+	public void wantedMove(){}
 	
 }

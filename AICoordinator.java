@@ -28,12 +28,10 @@ int[] update(final LandObject[][] map){
 		searchForUnits(map);
 	}else{
 		if(savedmove!=null)
-		if(!AIpositions.contains(transform(savedmove[2],savedmove[3]))){
 			if(map[savedmove[2]][savedmove[3]]!=null && map[savedmove[2]][savedmove[3]].getClass()==BushMan.class){
 				AIpositions.remove(transform(savedmove[0],savedmove[1]));
 				AIpositions.add(transform(savedmove[2],savedmove[3]));
 			}
-		}
 	}
 	
 	Integer[] positions=AIpositions.toArray(new Integer[0]);
@@ -47,6 +45,11 @@ int[] update(final LandObject[][] map){
 	
 	int nx=x-1+(new Random()).nextInt(3);
 	int ny=y-1+(new Random()).nextInt(3);
+	
+	while(nx<0 || nx>map.length || ny<0 || ny>map[nx].length || AIpositions.contains(transform(nx,ny))){
+		nx=x-1+(new Random()).nextInt(3);
+		ny=y-1+(new Random()).nextInt(3);
+	}
 	
 	int[] newposition=new int[]{x,y,nx,ny};
 	

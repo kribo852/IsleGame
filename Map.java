@@ -17,6 +17,7 @@ public Map(){
 	ilands=new Isle[sizex][sizey];
 	refreshAll();
 	seaplayer=new Player();
+	LandTexture.initialize(40);
 }
 
 	
@@ -145,8 +146,11 @@ public Map(){
 	}
 	
 	public void refreshSquare(int x , int y){
-		if(randomNumber(x+old_player_x, y+old_player_y)%350==0 || (x+old_player_x==(sizex/2)-1 && y+old_player_y==(sizey/2)-1)){
-			ilands[x][y]=new Isle(x+old_player_x, y+old_player_y);
+		if(randomNumber(x+old_player_x, y+old_player_y)%350==0){
+			ilands[x][y]=new Isle(x+old_player_x, y+old_player_y, 320);
+			new Thread(ilands[x][y]).start();	
+		}else if(x+old_player_x==(sizex/2)-1 && y+old_player_y==(sizey/2)-1){
+			ilands[x][y]=new Isle(x+old_player_x, y+old_player_y, 160);
 			new Thread(ilands[x][y]).start();
 		}else{
 			ilands[x][y]=null;

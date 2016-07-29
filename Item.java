@@ -4,6 +4,9 @@ import java.awt.Graphics2D;
 import java.awt.Color;
 import java.awt.BasicStroke;
 import java.util.Random;
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
 
 enum Item{
 		stick(0),
@@ -15,14 +18,17 @@ enum Item{
 		log(6),
 		stone(7);
 	
-		private int amount=0, value=0;
 		private BufferedImage image;
+		private int value;
 		
 	Item(int value){
 		this.value=value;
 		
 		if(value==0){
 			intitialize_stick();
+		}
+		if(value==1){
+			intitialize_plantfiber();
 		}
 		if(value==3){
 			intitialize_berries();
@@ -74,11 +80,32 @@ enum Item{
 		g2d.fillOval(16,16,8,8);
 	}
 	
-	public void add(int amount){
-		this.amount+=amount;
+	public void intitialize_plantfiber(){
+		
+		try{
+			image=ImageIO.read(new File("PlantFiber.png"));
+			maskSpriteColour(new Color(image.getRGB(0,0)));
+		}catch(IOException e){
+			
+		}
 	}
 	
 	public BufferedImage getImage(){
 		return image;
 	}
+	
+	protected void maskSpriteColour(Color c){
+			if(image==null)
+				return;
+			
+			int rgb=c.getRGB();
+			int maskcolour=(new Color(255,0,255,0)).getRGB();
+			for(int i=0; i<image.getWidth(); i++){
+				for(int j=0; j<image.getHeight(); j++){
+					if(image.getRGB(i,j)==rgb){
+						image.setRGB(i,j,maskcolour);
+					}
+				}
+			}	
+		}
 }
