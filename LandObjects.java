@@ -20,13 +20,12 @@ class LandObject{
 		
 		public void inventoryGive(Inventory other){
 			if(inventory==null)
-				inventory=new Inventory();
-			inventory.give(other);
+				inventory=other;
+			else	
+				inventory.give(other);
 		}
 		
 		public void inventoryGive(Item item, int amount){
-			if(inventory==null)
-				inventory=new Inventory();
 			inventory.give(item, amount);
 		}
 		
@@ -88,6 +87,10 @@ class LandObject{
 			return inventory.update();
 		}
 		
+		public final Item activeItem(){
+			return inventory.returnActive();
+		}
+		
 		public void inventoryGive(Inventory other){
 			if(inventory==null)
 				inventory=new PlayerInventory();
@@ -101,10 +104,9 @@ class LandObject{
 		}
 		
 		public void paint(Graphics g, int x, int y, int tilesize){
-			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
-			
-			if(inventory!=null)
-				inventory.paint(g);
+			super.paint(g,x,y,tilesize);
+			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);	
+			inventory.paint(g);
 		}
 		
 	}
@@ -139,8 +141,8 @@ class LandObject{
 class FractalTree extends Tree{
 
 	static Color barkColour=new Color(75 ,75 , 50);
-	static Color[] leafcolour=new Color[]{new Color(50, 100, 0), new Color(50, 100, 0) , new Color(175, 100, 25), new Color(75, 150, 25)};
-	double firstlength=15, spread=Math.PI/3, deviation=Math.PI/4;
+	static Color[] leafcolour=new Color[]{new Color(50, 100, 0), new Color(50, 100, 0) , new Color(65, 110, 25), new Color(75, 110, 25)};
+	double firstlength=15, spread=Math.PI/5, deviation=Math.PI/4;
 	Branch trunk;
 	
 	class Branch{
@@ -161,7 +163,7 @@ class FractalTree extends Tree{
 			
 			
 			for(int i=0; i<next.length; i++){
-				next[i]=new Branch(++depth, length*0.95, startangle+spread*i+(new Random()).nextDouble()*deviation);
+				next[i]=new Branch(++depth, length*0.95, startangle+spread*i+(-0.5+(new Random()).nextDouble())*deviation);
 			}		
 		}
 		
@@ -192,7 +194,7 @@ class FractalTree extends Tree{
 		}
 	}
 	
-	public FractalTree(){trunk=new Branch(0,12,3*Math.PI/2);}
+	public FractalTree(){trunk=new Branch(0,16,3*Math.PI/2);}
 	
 	public void paint(Graphics g, int x, int y, int tilesize, double windangle){
 		if(trunk!=null){
@@ -208,6 +210,9 @@ class FractalTree extends Tree{
 abstract class Humanoid extends LandObject{
 	
 	protected int x, y;
+	protected int placex=1, placey=0;// square where items are placed if dropped out of the inventory
+	private static final Color placementcolor=new Color(50,100,0); 
+	
 	protected static final int[][]manimage=
 	   {{0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0},
 		{0,0,0,1,1,0,1,0,1,1,0,0,0,0,0,0},
@@ -247,12 +252,25 @@ abstract class Humanoid extends LandObject{
 	public abstract void wantedMove();
 	public abstract Inventory updateInventory();
 	
+	//paints the active item placement square
+	public void paint(Graphics g, int x, int y, int tilesize){
+		((Graphics2D)g).setStroke(new BasicStroke(1));
+		g.setColor(placementcolor);
+		g.drawRect((placex+x)*tilesize, (placey+y)*tilesize, tilesize, tilesize);
+	}
+	
+	public int returnplacex(){
+		return placex+x;
+	}
+	
+	public int returnplacey(){
+		return placey+y;
+	}
+	
 }
 
 class BushMan extends Humanoid{
 	
-	
-		
 	public BushMan(){
 		if(sprites==null){
 			setSprites();
@@ -261,6 +279,7 @@ class BushMan extends Humanoid{
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
+			super.paint(g,x,y,tilesize);
 			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
 			//System.out.println("#############");
 	}

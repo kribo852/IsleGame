@@ -46,7 +46,7 @@ int[] update(final LandObject[][] map){
 	int nx=x-1+(new Random()).nextInt(3);
 	int ny=y-1+(new Random()).nextInt(3);
 	
-	while(nx<0 || nx>map.length || ny<0 || ny>map[nx].length || AIpositions.contains(transform(nx,ny))){
+	while(nx<0 || nx>=map.length || ny<0 || ny>=map[nx].length || AIpositions.contains(transform(nx,ny))){
 		nx=x-1+(new Random()).nextInt(3);
 		ny=y-1+(new Random()).nextInt(3);
 	}

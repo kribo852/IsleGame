@@ -50,7 +50,7 @@ class LandTexture{
 	}
 	
 	public static void initialize(int size){
-		grasstiles=new BufferedImage[23];
+		grasstiles=new BufferedImage[97];
 		sandtiles=new BufferedImage[3];
 		
 		for(int i=0; i<grasstiles.length; i++)

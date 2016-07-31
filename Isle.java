@@ -86,7 +86,7 @@ public Isle(int seedx, int seedy, int islesize){
 						}
 							
 						
-						if(newx==-1 || newx==layout.length || newy==-1 || newy==layout[0].length)
+						if(!insideMapPos(newx ,newy ))
 							return true;
 						
 						if(layout[newx][newy]==LandType.water){
@@ -146,7 +146,7 @@ public Isle(int seedx, int seedy, int islesize){
 				
 				for(int k=-1; k<2; k++){
 					for(int l=-1; l<2; l++){
-						if(i+k>=0 && i+k<layout.length && j+l>=0 && j+l<layout[0].length){
+						if(insideMapPos(i+k , j+l)){
 							if(layout[i+k][j+l]==LandType.water){
 								nowateraround=false;
 								k=2;
@@ -214,9 +214,9 @@ public Isle(int seedx, int seedy, int islesize){
 		{
 		boolean moved=false;
 		if(px!=landplayer.x || py!=landplayer.y)
-			if(landplayer.x>=0 && landplayer.x<layout.length && landplayer.y>=0 && landplayer.y<layout[0].length
+			if(insideMapPos( landplayer.x , landplayer.y )
 			&& validMovePosition(landplayer.x, landplayer.y)){
-					//items on this spot
+					//items picked up by an inhabitant
 					if(objects[landplayer.x][landplayer.y]!=null){
 						objects[px][py].inventoryGive(objects[landplayer.x][landplayer.y].returnInventory());
 					}
@@ -230,14 +230,46 @@ public Isle(int seedx, int seedy, int islesize){
 					landplayer.y=py;
 				}
 		}
+		{
+			Inventory tmp=landplayer.updateInventory();
+			if(tmp!=null){
+				if(insideMapPos(landplayer.returnplacex(), landplayer.returnplacey()) &&
+				layout[landplayer.returnplacex()][landplayer.returnplacey()]!=LandType.water){
+					//empty placeholding landbjects with inventoies should never exist and hence are not concerned
+					if(objects[landplayer.returnplacex()][landplayer.returnplacey()]==null){
+						objects[landplayer.returnplacex()][landplayer.returnplacey()]=new LandObject();
+						objects[landplayer.returnplacex()][landplayer.returnplacey()].inventoryGive(tmp);
+						ItemAssembler.craftItem(objects,landplayer.returnplacex(),landplayer.returnplacey());
+					}
+					else{
+						landplayer.inventoryGive(tmp);
+					}
+					
+				}else{
+					landplayer.inventoryGive(tmp);
+				}
+			}
+		}
 		
-		landplayer.updateInventory();
+		{//tree cutting
+			if(KeyBoard.returnKeyPress()==KeyEvent.VK_SPACE){
+				if(landplayer.activeItem()==Item.stoneaxe){
+					if(insideMapPos(landplayer.returnplacex(), landplayer.returnplacey())){
+						if(objects[landplayer.returnplacex()][landplayer.returnplacey()]!=null)
+						if(objects[landplayer.returnplacex()][landplayer.returnplacey()].getClass()==FractalTree.class){
+							objects[landplayer.returnplacex()][landplayer.returnplacey()]=new LandObject();
+							objects[landplayer.returnplacex()][landplayer.returnplacey()].inventoryGive(InventoryFactory.createTreeInventory());
+						}	
+					}
+				}
+			}
+		}
 		
 		int[] npcmoved=aicoordinator.update(objects);
 		
 			if(npcmoved!=null){
 			if(objects[npcmoved[0]][npcmoved[1]].getClass()==BushMan.class){
-			if(npcmoved[2]>=0 && npcmoved[2]<layout.length && npcmoved[3]>=0 && npcmoved[3]<layout[0].length)
+			if(insideMapPos( npcmoved[2] , npcmoved[3] ))
 				if(validMovePosition(npcmoved[2],npcmoved[3])){
 					objects[npcmoved[2]][npcmoved[3]]=objects[npcmoved[0]][npcmoved[1]];
 					objects[npcmoved[0]][npcmoved[1]]=null;
@@ -263,6 +295,9 @@ public Isle(int seedx, int seedy, int islesize){
 		return false;
 	}
 	
+	//trying to standardize these functions
+	boolean insideMapPos(int x, int y){return(x>=0 && x<layout.length && y>=0 && y<layout[x].length);}
+	
 	public void paintOnLand(Graphics g, int screenwidth , int screenheight){
 		
 		int numtiles=10;
@@ -271,7 +306,7 @@ public Isle(int seedx, int seedy, int islesize){
 		
 		for(int i=-numtiles; i<numtiles; i++){
 			for(int j=-numtiles; j<numtiles; j++){
-				if(i+landplayer.x>=0 && i+landplayer.x<layout.length && j+landplayer.y>=0 && j+landplayer.y<layout[0].length){
+				if(insideMapPos(i+landplayer.x,j+landplayer.y)){
 					LandType l=layout[i+landplayer.x][j+landplayer.y];
 					if(l!=LandType.water){
 						g.drawImage(LandTexture.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom square
@@ -289,8 +324,8 @@ public Isle(int seedx, int seedy, int islesize){
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
 						
 						if(objects[i+landplayer.x][j+landplayer.y].getClass()==FractalTree.class){
-							double angle=rainfall.getWindAngle()+Math.PI*(i+j/3.0)/50;
-							angle=(Math.PI/20)*Math.sin(angle);
+							double angle=rainfall.getWindAngle()+Math.PI*(i+landplayer.x+(j+landplayer.y)/3.0)/10;
+							angle=(Math.PI/12)*Math.sin(angle);
 							((FractalTree)objects[i+landplayer.x][j+landplayer.y]).paint(g,i+numtiles,j+numtiles,scalex,angle);
 						}else{
 							objects[i+landplayer.x][j+landplayer.y].paint((Graphics2D)g,i+numtiles,j+numtiles,scalex);
@@ -377,8 +412,8 @@ public Isle(int seedx, int seedy, int islesize){
 		static public void initializeBuffer(){
 			for(int i=0; i<image.getWidth(); i++){
 				for(int j=0; j<image.getHeight(); j++){
-					double distance=0.25*Math.sqrt(Math.pow(image.getWidth()/2-i-0.5,2)+Math.pow(image.getWidth()/2-j-0.5,2));
-					int alpha=(int)(200*Math.pow(Math.E , -distance));
+					double distance=0.36*Math.sqrt(Math.pow(image.getWidth()/2-i-0.5,2)+Math.pow(image.getWidth()/2-j-0.5,2));
+					int alpha=(int)(200*Math.exp(-distance));
 					Color c=new Color(raincoloured.getRGB());
 					c=new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
 					image.setRGB(i,j, c.getRGB());
@@ -428,8 +463,8 @@ public Isle(int seedx, int seedy, int islesize){
 			}
 			
 			Graphics g=rainbuffer[updateframe].getGraphics();
-			if(active)
-				((Graphics2D)g).setBackground(new Color(25, 50, 50, 25));
+			if(active && !((new Random().nextInt(10))==0))
+				((Graphics2D)g).setBackground(new Color(25, 50, 50, 50));
 			else
 				((Graphics2D)g).setBackground(new Color(255, 255, 255, 0));
 			g.clearRect(0,0,800, 800);

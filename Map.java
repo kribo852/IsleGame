@@ -18,13 +18,16 @@ public Map(){
 	refreshAll();
 	seaplayer=new Player();
 	LandTexture.initialize(40);
+	SeaCamera.initializeCamera(seaplayer.getX(), seaplayer.getY());
 }
 
 	
 	public void paint(Graphics g, int screenwidth , int screenheight){
 		
-		if(updateLanding()!=null){
-			paintOnLand(g,screenwidth,screenheight);
+		Isle isleonposition=updateLanding();
+		
+		if(isleonposition!=null){
+			isleonposition.paintOnLand(g,screenwidth,screenheight);
 		}else{
 			paintAtSea(g, screenwidth, screenheight);
 		}
@@ -35,24 +38,22 @@ public Map(){
 		double scalex=screenwidth/sizex;
 		double scaley=screenheight/sizey;
 		
+		int tmpx=(int)(scalex*(seaplayer.getX()-SeaCamera.getCameraX()));
+		int tmpy=(int)(scaley*(seaplayer.getY()-SeaCamera.getCameraY()));
+		
 		for(int i=0; i<sizex; i++){
 			for(int j=0; j<sizey; j++){
 				if(ilands[i][j]!=null){
 					
-					ilands[i][j].paintAtSea(g , (int)((i-seaplayer.getX()%1)*scalex) , (int)((j-seaplayer.getY()%1)*scaley));
+					ilands[i][j].paintAtSea(g , (int)((i-SeaCamera.getCameraX()%1)*scalex) , (int)((j-SeaCamera.getCameraY()%1)*scaley));
 				}
 			}	
 		}
 		
 		g.setColor(Color.black);
-		g.fillRect(395,395, 10 , 10);
-		g.drawLine(400, 400, 
-		400+(int)(10*Math.cos(seaplayer.returnTheta())), 400+(int)(10*Math.sin(seaplayer.returnTheta())));
-	}
-	
-	public void paintOnLand(Graphics g, int screenwidth , int screenheight){
-		if(ilands[sizex/2-1][sizey/2-1]!=null)
-			ilands[sizex/2-1][sizey/2-1].paintOnLand(g,screenwidth,screenheight);
+		g.fillRect(395+tmpx,395+tmpy, 10 , 10);
+		g.drawLine(400+tmpx, 400+tmpy, 
+		400+tmpx+(int)(10*Math.cos(seaplayer.returnTheta())), 400+tmpy+(int)(10*Math.sin(seaplayer.returnTheta())));
 	}
 	
 	public void update(){
@@ -71,6 +72,7 @@ public Map(){
 	
 	public void leaveIsland(){
 		seaplayer.x++;
+		SeaCamera.initializeCamera(seaplayer.getX(), seaplayer.getY());
 		refresh();//so that the movement takes effect
 		//potential teardown, not sure if needed
 	}
@@ -79,9 +81,11 @@ public Map(){
 		
 		seaplayer.resetDirectionPosition(KeyBoard.returnSpeed() , sizex , sizey);
 		seaplayer.resetAngle(KeyBoard.returnTheta());
+		
+		SeaCamera.update(seaplayer.getX(), seaplayer.getY());
 	
-		int playerx=(int)seaplayer.getX();
-		int playery=(int)seaplayer.getY();
+		int playerx=(int)SeaCamera.getCameraX();
+		int playery=(int)SeaCamera.getCameraY();
 	
 		if(playerx>old_player_x){
 			old_player_x=playerx;
@@ -177,9 +181,12 @@ public Map(){
 	 */
 	public Isle updateLanding(){
 		
-		if(ilands[sizex/2-1][sizey/2-1]!=null)
-			ilands[sizex/2-1][sizey/2-1].initializeLand();
+		int tmpx=sizey/2-1+(int)(seaplayer.getX()-SeaCamera.getCameraX());
+		int tmpy=sizey/2-1+(int)(seaplayer.getY()-SeaCamera.getCameraY());
 		
-		return ilands[sizex/2-1][sizey/2-1];	
+		if(ilands[tmpx][tmpy]!=null)
+			ilands[tmpx][tmpy].initializeLand();
+		
+		return ilands[tmpx][tmpy];	
 	}
 }

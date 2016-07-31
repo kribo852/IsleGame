@@ -16,7 +16,10 @@ enum Item{
 		crop(4),
 		shell(5),
 		log(6),
-		stone(7);
+		stone(7),
+		stoneaxe(8),
+		rope(9),
+		fishnet(10);
 	
 		private BufferedImage image;
 		private int value;
@@ -35,6 +38,15 @@ enum Item{
 		}
 		if(value==7){
 			intitialize_stone();
+		}
+		if(value==8){
+			intitialize_stoneaxe();
+		}
+		if(value==9){
+			intitialize_rope();
+		}
+		if(value==10){
+			intitialize_fishnet();
 		}	
 	}
 	
@@ -87,6 +99,41 @@ enum Item{
 			maskSpriteColour(new Color(image.getRGB(0,0)));
 		}catch(IOException e){
 			
+		}
+	}
+	
+	public void intitialize_stoneaxe(){
+		
+		try{
+			image=ImageIO.read(new File("StoneAxe.png"));
+			maskSpriteColour(new Color(image.getRGB(0,0)));
+		}catch(IOException e){
+			
+		}
+	}
+	
+	public void intitialize_rope(){
+		
+		try{
+			image=ImageIO.read(new File("Rope.png"));
+			maskSpriteColour(new Color(image.getRGB(0,0)));
+		}catch(IOException e){
+			
+		}
+	}
+	
+	public void intitialize_fishnet(){
+		
+		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
+		Graphics2D g2d=image.createGraphics();
+		g2d.setColor(new Color(255,0,255,0));
+		g2d.fillRect(0,0,image.getWidth(), image.getHeight());
+		
+		g2d.setColor(new Color(150,125,25));
+		
+		for(int i=0; i<4; i++){
+			g2d.drawLine(i*image.getWidth()/4 , 0 , i*image.getWidth()/4  , image.getHeight());
+			g2d.drawLine(0 ,  i*image.getHeight()/4 , image.getWidth() , i*image.getHeight()/4);
 		}
 	}
 	
