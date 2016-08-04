@@ -11,8 +11,8 @@ class SeaCamera{
 	}
 
 	public static void update(double x, double y){
-		camerax=0.98*camerax+0.02*x;
-		cameray=0.98*cameray+0.02*y;
+		camerax=0.9875*camerax+0.0125*x;
+		cameray=0.9875*cameray+0.0125*y;
 	}
 	
 	public static double getCameraX(){return camerax;}

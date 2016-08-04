@@ -41,11 +41,13 @@ public Map(){
 		int tmpx=(int)(scalex*(seaplayer.getX()-SeaCamera.getCameraX()));
 		int tmpy=(int)(scaley*(seaplayer.getY()-SeaCamera.getCameraY()));
 		
+		g.setColor(Color.green.darker());
+		
 		for(int i=0; i<sizex; i++){
 			for(int j=0; j<sizey; j++){
 				if(ilands[i][j]!=null){
-					
 					ilands[i][j].paintAtSea(g , (int)((i-SeaCamera.getCameraX()%1)*scalex) , (int)((j-SeaCamera.getCameraY()%1)*scaley));
+					g.fillOval((int)((i+1-SeaCamera.getCameraX()%1)*scalex) , (int)((j+1-SeaCamera.getCameraY()%1)*scaley),4,4);
 				}
 			}	
 		}

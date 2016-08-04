@@ -239,7 +239,7 @@ class InventoryFactory{
 	public static Inventory createGroundInventory(){
 		
 		Inventory rtn=createTreeInventory();
-		if((new Random()).nextInt(5)==0)
+		if((new Random()).nextInt(2)==0)
 			rtn.give(Item.stone,  1+(new Random()).nextInt(2));
 		return rtn;
 		

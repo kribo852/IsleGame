@@ -7,7 +7,7 @@ I am building it on my raspberry computer and hope that it plays alright on othe
 The game could use some optimization, but if it runs slow, don't hesitate to change the trees to ones with sprites,
 and to turn off the rain.
 
-Currently it is a bit wonky but the game motto is: more playable by the minute(joke).
+Currently it is a bit wonky but the game motto is: more playable day by day(joke).
 
 I hope to add some making of tools and buildings and to add monsters or ghosts or something.
 
