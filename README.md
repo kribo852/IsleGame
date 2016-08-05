@@ -26,3 +26,5 @@ I also hope that nothing is missing from the git commit, but in the case of miss
 
 The project is under the licence GPL3, which I have not read that *thoroughly but which seems to work for my purposes.
 
+compile it using the terminal command javac *java. Run it by typing java main in the terminal.
+On Windows machins I recoment using the Eclipse IDE to run the game. 

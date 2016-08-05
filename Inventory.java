@@ -223,22 +223,39 @@ class InventoryTransformer{
 class InventoryFactory{
 	
 	public static Inventory createTreeInventory(){
-		
 		Inventory rtn=new Inventory();
 		rtn.give(Item.plantfiber , (new Random()).nextInt(3));
 		rtn.give(Item.stick , (new Random()).nextInt(3));
-		if((new Random()).nextInt(15)==0)
-			rtn.give(Item.berries , 50+(new Random()).nextInt(50));
+			
+		rtn.shuffle();
+		
+		return rtn;	
+	}
+	
+	public static Inventory createPineInventory(){	
+		Inventory rtn=new Inventory();
+		rtn.give(Item.stick , (new Random()).nextInt(3));
+		rtn.give(Item.log , (new Random()).nextInt(2));
 			
 		rtn.shuffle();
 		
 		return rtn;
+	}
+	
+	public static Inventory createBushInventory(){	
+		Inventory rtn=new Inventory();
+		rtn.give(Item.plantfiber , (new Random()).nextInt(5));
+		if((new Random()).nextInt(5)==0)
+			rtn.give(Item.berries , 5+(new Random()).nextInt(25));
+			
+		rtn.shuffle();
 		
+		return rtn;
 	}
 	
 	public static Inventory createGroundInventory(){
-		
 		Inventory rtn=createTreeInventory();
+		rtn.give(createBushInventory());
 		if((new Random()).nextInt(2)==0)
 			rtn.give(Item.stone,  1+(new Random()).nextInt(2));
 		return rtn;

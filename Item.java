@@ -36,6 +36,9 @@ enum Item{
 		if(value==3){
 			intitialize_berries();
 		}
+		if(value==6){
+			intitialize_log();
+		}
 		if(value==7){
 			intitialize_stone();
 		}
@@ -54,7 +57,7 @@ enum Item{
 		
 	}
 	
-	public void intitialize_stick(){
+	private void intitialize_stick(){
 		
 		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
 		Graphics2D g2d=image.createGraphics();
@@ -67,7 +70,7 @@ enum Item{
 		
 	}
 	
-	public void intitialize_berries(){
+	private void intitialize_berries(){
 		
 		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
 		Graphics2D g2d=image.createGraphics();
@@ -81,7 +84,7 @@ enum Item{
 		}
 	}
 	
-	public void intitialize_stone(){
+	private void intitialize_stone(){
 		
 		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
 		Graphics2D g2d=image.createGraphics();
@@ -92,7 +95,7 @@ enum Item{
 		g2d.fillOval(16,16,8,8);
 	}
 	
-	public void intitialize_plantfiber(){
+	private void intitialize_plantfiber(){
 		
 		try{
 			image=ImageIO.read(new File("PlantFiber.png"));
@@ -102,7 +105,7 @@ enum Item{
 		}
 	}
 	
-	public void intitialize_stoneaxe(){
+	private void intitialize_stoneaxe(){
 		
 		try{
 			image=ImageIO.read(new File("StoneAxe.png"));
@@ -112,7 +115,7 @@ enum Item{
 		}
 	}
 	
-	public void intitialize_rope(){
+	private void intitialize_rope(){
 		
 		try{
 			image=ImageIO.read(new File("Rope.png"));
@@ -122,7 +125,7 @@ enum Item{
 		}
 	}
 	
-	public void intitialize_fishnet(){
+	private void intitialize_fishnet(){
 		
 		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
 		Graphics2D g2d=image.createGraphics();
@@ -135,6 +138,21 @@ enum Item{
 			g2d.drawLine(i*image.getWidth()/4 , 0 , i*image.getWidth()/4  , image.getHeight());
 			g2d.drawLine(0 ,  i*image.getHeight()/4 , image.getWidth() , i*image.getHeight()/4);
 		}
+	}
+	
+	private void intitialize_log(){
+		
+		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
+		Graphics2D g2d=image.createGraphics();
+		g2d.setColor(new Color(255,0,255,0));
+		g2d.fillRect(0,0,image.getWidth(), image.getHeight());
+		
+		g2d.setColor(new Color(150,125,25));
+		g2d.fillOval(4,8,8,16);
+		g2d.fillRect(8,8,16,16);
+		g2d.setColor(new Color(200,175,150));
+		g2d.fillOval(20,8,8,16);
+		
 	}
 	
 	public BufferedImage getImage(){

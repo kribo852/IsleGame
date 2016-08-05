@@ -244,8 +244,9 @@ class Isle implements Runnable{
 					if(insideMapPos(landplayer.getPlaceX(), landplayer.getPlaceY())){
 						if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()]!=null)
 							if(isTree(landplayer.getPlaceX(),landplayer.getPlaceY())){
+								Inventory dropped=objects[landplayer.getPlaceX()][landplayer.getPlaceY()].returnInventory();
 								objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=new LandObject();
-								objects[landplayer.getPlaceX()][landplayer.getPlaceY()].inventoryGive(InventoryFactory.createTreeInventory());
+								objects[landplayer.getPlaceX()][landplayer.getPlaceY()].inventoryGive(dropped);
 						}	
 					}
 				}
@@ -347,6 +348,7 @@ class Isle implements Runnable{
 		
 		if(distance_to_sea[landplayer.x][landplayer.y]==1)
 			Tooltip.paintSailTip(g);
+		Tooltip.paintFadingTip(g);
 	}
 	
 	public void paintAtSea(Graphics g , int x , int y){

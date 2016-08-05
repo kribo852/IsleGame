@@ -227,6 +227,11 @@ class FractalTree extends Tree{
 	public void free(){
 		trunk=null;
 	}
+	
+	public Inventory returnInventory(){
+		return InventoryFactory.createTreeInventory();
+	}
+	
 }
 
 class PineTree extends FractalTree{
@@ -286,6 +291,10 @@ class PineBranch extends Branch{
 	public void paint(Graphics g, int x, int y, int tilesize, double windangle){
 		super.paint(g, x, y, tilesize, windangle/8);
 	}
+	
+	public Inventory returnInventory(){
+		return InventoryFactory.createPineInventory();
+	}
 }
 
 class FractalBush extends FractalTree{
@@ -298,7 +307,7 @@ class FractalBush extends FractalTree{
 		branchpositions=new double[trunk.length];
 		for(int i=0; i<trunk.length; i++){
 			branchpositions[i]=(new Random()).nextDouble();
-			trunk[i]=new BushBranch(0, 6 , Math.PI*(branchpositions[i]-0.5)/8, false);
+			trunk[i]=new BushBranch(0, 8 , Math.PI*(branchpositions[i]-0.5)/12, false);
 		}
 	}
 	
@@ -333,9 +342,13 @@ class FractalBush extends FractalTree{
 		if(trunk!=null){
 			for(int i=0; i<trunk.length; i++){
 				int xoffset=(int)(tilesize*branchpositions[i]);
-				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+tilesize/2, Math.PI*(branchpositions[i]-0.5)/8+windangle/2);
+				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+tilesize/2, windangle);
 			}
 		}
+	}
+	
+	public Inventory returnInventory(){
+		return InventoryFactory.createBushInventory();
 	}
 }
 
