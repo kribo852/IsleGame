@@ -24,7 +24,9 @@ The next step will be to dewonkify the project and clean the code a bit.
 I also hope that nothing is missing from the git commit, but in the case of missing sprites, try to paint some.
 
 
-The project is under the licence GPL3, which I have not read that *thoroughly but which seems to work for my purposes.
+The project, except for the sprites, is under the licence GPL3 
+which I have not read that *thoroughly but which seems to work for my purposes.
+The sprites/pictures comes without a license.
 
 compile it using the terminal command javac *java. Run it by typing java main in the terminal.
 On Windows machins I recoment using the Eclipse IDE to run the game. 

@@ -164,6 +164,15 @@ class FractalTree extends Tree{
 	static Color[] leafcolour=new Color[]{new Color(50, 100, 0), new Color(50, 100, 0) , new Color(65, 110, 25), new Color(75, 110, 25)};
 	double firstlength=15, spread=Math.PI/5, deviation=Math.PI/4;
 	Branch trunk;
+	boolean treealive=true;
+	
+	public void setAlive(boolean treealive){
+		this.treealive=treealive;
+	}
+	
+	public boolean isAlive(){
+		return treealive;
+	}
 	
 	class Branch{
 		double angle, length;
@@ -193,14 +202,15 @@ class FractalTree extends Tree{
 		
 		protected void paint(Graphics2D g, double x, double y, int broadness, int countleafcolour, final double windangle,double depth){
 			
-			g.setStroke(new BasicStroke(Math.max(1,broadness)));
-		
-			if(next!=null)
-				g.setColor(barkColour);
-			else{
+			if(next!=null){
+				g.setColor(barkColour);	
+			}else{
+				if(!treealive)return;
+				
 				g.setColor(leafcolour[countleafcolour]);
-				g.setStroke(new BasicStroke(Math.max(1,broadness)));
+				
 			}
+			g.setStroke(new BasicStroke(Math.max(1,broadness)));
 		
 			g.drawLine((int)x , (int)y,
 			(int)(length*Math.cos(angle+depth*windangle)+x),
@@ -289,7 +299,10 @@ class PineBranch extends Branch{
 	
 	// I reduce the windangle, pretty notch
 	public void paint(Graphics g, int x, int y, int tilesize, double windangle){
+		Color[] c=super.leafcolour;
+		super.leafcolour=this.leafcolour;
 		super.paint(g, x, y, tilesize, windangle/8);
+		super.leafcolour=c;
 	}
 	
 	public Inventory returnInventory(){
@@ -300,7 +313,7 @@ class PineBranch extends Branch{
 class FractalBush extends FractalTree{
 	Branch[] trunk;
 	double[] branchpositions;
-	Color barkColour=new Color(50 ,100 , 0);
+	static Color barkColour=new Color(50 ,100 , 0);
 	
 	public FractalBush(){
 		trunk=new Branch[8];
@@ -312,11 +325,9 @@ class FractalBush extends FractalTree{
 	}
 	
 	class BushBranch extends Branch{
-		boolean leaf=true;
 	
 		public BushBranch(int depth, double length, double addangle , boolean leaf){
 			this.length=length;
-			this.leaf=leaf;
 			
 			if(leaf){
 				if(addangle>0){
@@ -331,20 +342,29 @@ class FractalBush extends FractalTree{
 			if(depth>12 || leaf)
 				return;
 				
-			next=new Branch[2];
-			next[0]=new BushBranch(depth+1, length*0.95, addangle, false);
-			next[1]=new BushBranch(depth+1, length*0.95, addangle, true);
-			
+			if(depth>=1){
+				next=new Branch[2];
+				next[0]=new BushBranch(depth+1, length*0.95, addangle, false);
+				next[1]=new BushBranch(depth+1, length*0.95, addangle, true);
+			}else{
+				next=new Branch[1];
+				next[0]=new BushBranch(depth+1, length*0.95, addangle, false);
+			}
 		}
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize, double windangle){
+		Color c=super.barkColour;
+		if(treealive){
+			super.barkColour=this.barkColour;
+		}
 		if(trunk!=null){
 			for(int i=0; i<trunk.length; i++){
 				int xoffset=(int)(tilesize*branchpositions[i]);
-				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+tilesize/2, windangle);
+				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+tilesize/2, windangle/4);
 			}
 		}
+		super.barkColour=c;
 	}
 	
 	public Inventory returnInventory(){
@@ -430,9 +450,9 @@ abstract class Humanoid extends LandObject{
 	
 }
 
-class BushMan extends Humanoid{
+class TribesHumaniod extends Humanoid{
 	
-	public BushMan(){
+	public TribesHumaniod(){
 		if(sprites==null){
 			setSprites();
 			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
@@ -468,3 +488,55 @@ class BushMan extends Humanoid{
 		}
 	}
 }
+
+class SingletonTreeFactory{
+	
+	private int currenttreecounter=0;
+	private FractalTree[] livetrees;
+	private FractalTree[] deadtrees;
+	
+	public SingletonTreeFactory(){
+		livetrees=new FractalTree[5];
+		deadtrees=new FractalTree[3];
+		
+		livetrees[0]=new FractalTree();
+		livetrees[1]=new PineTree();
+		livetrees[2]=new FractalBush();
+		livetrees[3]=new FractalTree();
+		livetrees[4]=new FractalTree();
+		
+		deadtrees[0]=new FractalTree();
+		deadtrees[1]=new PineTree();
+		deadtrees[2]=new FractalBush();
+		for(int i=0; i<deadtrees.length; i++)deadtrees[i].setAlive(false);
+		
+	}
+	
+	public FractalTree getTree(boolean treealive){
+		++currenttreecounter;
+		return treealive ? livetrees[currenttreecounter%livetrees.length] : deadtrees[currenttreecounter%deadtrees.length];
+	}
+	
+	public FractalTree getDeadTreeOfType(Class c){
+		
+		for(FractalTree tree: deadtrees){
+			if(tree.getClass()==c)return tree;
+		}
+		
+		return null;
+	}
+	
+	public FractalTree getLiveTreeOfType(Class c){
+		if(c==FractalTree.class){
+			return livetrees[(3+(new Random()).nextInt(3))%livetrees.length];
+		}
+		if(c==PineTree.class){
+			return livetrees[1];
+		}
+		if(c==FractalBush.class){
+			return livetrees[2];
+		}
+		
+		return null;
+	}
+}	

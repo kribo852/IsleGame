@@ -20,6 +20,8 @@ class Isle implements Runnable{
 	LandPlayer landplayer;//null if at sea
 	Rainfall rainfall;
 	ArrayList<Humanoid> population;
+	SingletonTreeFactory singletontreefactory;
+	static Random RND=new Random();
 	
 		class Tuple<Type>{
 			public Type a,b;
@@ -35,8 +37,6 @@ class Isle implements Runnable{
 			this.seedy=seedy;
 			this.islesize=islesize;
 			landplayer=null;
-			rainfall=new Rainfall();
-			population=new ArrayList<Humanoid>();//here?
 	}
 
 	//generates island in new thread
@@ -131,13 +131,10 @@ class Isle implements Runnable{
 		
 		if(landplayer!=null)
 			return;
-			
-		LandObject[] treemap=new LandObject[25];
-		
-		treemap[0]=new PineTree();
-		int treeindex=1;
 		
 		objects=new LandObject[layout.length][layout[0].length];
+		population=new ArrayList<Humanoid>();
+		singletontreefactory=new SingletonTreeFactory();
 		
 		distance_to_sea=calculateSeaDistance(layout);
 		
@@ -162,16 +159,9 @@ class Isle implements Runnable{
 					layout[i][j]=LandType.grass;
 					if(objects[i][j]==null){
 						double treeChance=Math.exp(-0.05*distance_to_sea[i][j]);
-						if((new Random()).nextDouble()>treeChance){
-								if(treemap[treeindex]==null){
-									if((new Random()).nextInt(5)==0)
-										treemap[treeindex]=new FractalBush();
-									else
-										treemap[treeindex]=new FractalTree();
-								}
-								objects[i][j]=treemap[treeindex];
+						if(RND.nextDouble()>treeChance){
+							objects[i][j]=singletontreefactory.getTree(true);		
 						}
-						treeindex=(treeindex+1)%treemap.length;
 					}
 				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.dirt){
 					layout[i][j]=LandType.clay;
@@ -182,14 +172,14 @@ class Isle implements Runnable{
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
 				if(layout[i][j]!=LandType.water){
-					if((new Random()).nextInt(200)==0){
-						int rnd=(new Random()).nextInt(20);
+					if(RND.nextInt(200)==0){
+						int rnd=RND.nextInt(20);
 						objects[i][j]=new LandObject();
 						objects[i][j].inventoryGive(InventoryFactory.createGroundInventory());
 						
 					
-					}else if((new Random()).nextInt(1000)==0){
-						Humanoid h=new BushMan();
+					}else if(RND.nextInt(1000)==0){
+						Humanoid h=new TribesHumaniod();
 						objects[i][j]=h;
 						h.setX(i);
 						h.setY(j);
@@ -204,17 +194,51 @@ class Isle implements Runnable{
 		landplayer.setY(layout[0].length/2);
 		
 		while(layout[landplayer.x][landplayer.y]!=LandType.dirt){
-			landplayer.setX((new Random()).nextInt(layout.length));
-			landplayer.setY((new Random()).nextInt(layout[0].length));
+			landplayer.setX(RND.nextInt(layout.length));
+			landplayer.setY(RND.nextInt(layout[0].length));
 		}
 		
 		objects[landplayer.getX()][landplayer.getY()]=landplayer;
 		population.add(landplayer);
-		
+		rainfall=new Rainfall();
 		new Thread(rainfall).start();
 	}
 	
 	public boolean updateLand(){
+		
+		{
+			
+			int treex=RND.nextInt(layout.length);
+			int treey=RND.nextInt(layout[0].length);
+			if(RND.nextInt(3)==0){
+				if(objects[treex][treey]!=null && isTree(treex, treey)){
+					objects[treex][treey]=singletontreefactory.getDeadTreeOfType(objects[treex][treey].getClass());
+				}
+			}else{
+				if(layout[treex][treey]==LandType.grass && objects[treex][treey]==null){
+					double sumtrees=0, activesquares=0;
+					ArrayList<Class> livingtrees=new ArrayList<Class>();
+					
+					for(int i=-2; i<3; i++){
+						for(int j=-2; j<3; j++){
+							if(insideMapPos(treex+i, treey+j) && objects[treex+i][treey+j]!=null){
+								++activesquares;
+								if(isTree(treex+i, treey+j)){
+									++sumtrees;
+									if(((FractalTree)objects[treex+i][treey+j]).isAlive()){
+										livingtrees.add(objects[treex+i][treey+j].getClass());
+									}
+								}
+							}
+						}
+					}
+					double treeChance=Math.exp(-0.05*distance_to_sea[treex][treey]);
+					if(sumtrees/activesquares<treeChance && !livingtrees.isEmpty()){
+						objects[treex][treey]=singletontreefactory.getLiveTreeOfType(livingtrees.get(RND.nextInt(livingtrees.size())));
+					}
+				}
+			}
+		}
 		
 		updateHumanoidMovements(population);
 		{
@@ -301,7 +325,7 @@ class Isle implements Runnable{
 	
 	boolean isHumanoid(int x, int y){
 		Class c=objects[x][y].getClass();
-		return (c==LandPlayer.class || c==BushMan.class);
+		return (c==LandPlayer.class || c==TribesHumaniod.class);
 		}
 	
 	//trying to standardize these functions
@@ -405,111 +429,5 @@ class Isle implements Runnable{
 				}	
 		}
 		return rtn;
-	}
-}
-	
-class Raindrop{
-	static BufferedImage image=new BufferedImage(16,16, BufferedImage.TYPE_INT_ARGB);
-	double x , y , dx, dy;
-	static final Color raincoloured=new Color(25,100,85);
-	static final Color firecoloured=new Color(200,185,25);
-	
-	
-	static public void initializeBuffer(){
-		for(int i=0; i<image.getWidth(); i++){
-			for(int j=0; j<image.getHeight(); j++){
-				double distance=0.36*Math.sqrt(Math.pow(image.getWidth()/2-i-0.5,2)+Math.pow(image.getWidth()/2-j-0.5,2));
-				int alpha=(int)(200*Math.exp(-distance));
-				Color c=new Color(raincoloured.getRGB());
-				c=new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
-				image.setRGB(i,j, c.getRGB());
-			}
-		}
-	} 
-}
-
-class Rainfall implements Runnable{
-	boolean active=true;
-	int timer=500;
-	BufferedImage rainbuffer[]=new BufferedImage[2];
-	Raindrop[] rain;
-	double windangle=0;//used for sinus winds in trees
-	int currentframe=0;
-	boolean nextframeready=false;;
-	
-	public Rainfall(){
-		Raindrop.initializeBuffer();
-		rain=new Raindrop[750];
-	
-		for(int i=0; i<rain.length; i++){
-			rain[i]=new Raindrop();
-			double angle=Math.PI/2+Math.PI*0.2*(new Random()).nextDouble();
-			double speed=10+6*(new Random()).nextDouble();
-			rain[i].dx=speed*Math.cos(angle);
-			rain[i].dy=speed*Math.sin(angle);
-			rain[i].y=(new Random()).nextInt(1000);
-			rain[i].x=(new Random()).nextInt(1000);
-		}	
-		
-		rainbuffer[0]=new BufferedImage(800,800, BufferedImage.TYPE_INT_ARGB);
-		rainbuffer[1]=new BufferedImage(800,800, BufferedImage.TYPE_INT_ARGB);
-	}
-	
-	public void run(){
-		int updateframe= (currentframe+1)%rainbuffer.length;
-		
-		for(int i=0; i<rain.length; i++){
-			if(active && rain[i].y>1000){
-				rain[i].y=-(new Random()).nextInt(1000);
-				rain[i].x=-100+(new Random()).nextInt(1000);
-			}else{
-				rain[i].x+=rain[i].dx;
-				rain[i].y+=rain[i].dy;
-			}
-		}
-		
-		Graphics g=rainbuffer[updateframe].getGraphics();
-		if(active && !((new Random().nextInt(10))==0))
-			((Graphics2D)g).setBackground(new Color(25, 50, 50, 50));
-		else
-			((Graphics2D)g).setBackground(new Color(255, 255, 255, 0));
-		g.clearRect(0,0,800, 800);
-		
-		for(int i=0; i<rain.length; i++){
-			g.drawImage(Raindrop.image, (int)rain[i].x , (int)rain[i].y , null);
-		}
-		
-		nextframeready=true;
-	}
-	
-	public boolean update(){
-		boolean rtn=nextframeready;
-		if(nextframeready){
-			nextframeready=false;
-			currentframe=(currentframe+1)%rainbuffer.length;
-		}
-		
-		--timer;
-		if(timer<=0){
-			if(active)
-				timer=(new Random()).nextInt(2500);
-			else
-				timer=(new Random()).nextInt(750);
-			
-			active=!active;
-		}
-		windangle+=(Math.PI/100)%Math.PI;
-		
-		return rtn;
-	}
-	
-	public void paint(Graphics g , int screenwidth, int screenheight){
-		
-		g.drawImage(rainbuffer[currentframe], 0 , 0 , null);
-		
-	}
-	
-	public double getWindAngle(){
-		return windangle;
 	}
 }

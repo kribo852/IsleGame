@@ -15,7 +15,7 @@ class Inventory{
 	ArrayList<ItemWrapper> items;
 	protected static final int spritesize=32;
 	double norm=1;//indicates how much of the inventory items will be transformed by transformers
-	Transformer[] transformers;
+	InventoryTransformer[] transformers;
 	
 	class ItemWrapper{
 		Item item;
@@ -126,6 +126,8 @@ class PlayerInventory extends Inventory{
 		((Graphics2D)g).setStroke(new BasicStroke(1));
 		g.setColor(Color.green);
 		g.drawRect(activeindex*spritesize, 36, spritesize, spritesize);
+		if(items!=null && !items.isEmpty())
+			g.drawString(""+items.get(activeindex).item, index*spritesize, 64);
 		
 	}
 	
