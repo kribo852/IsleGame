@@ -84,7 +84,7 @@ class LandPlayer extends Humanoid{
 			if(KeyBoard.returnKeyPress()==KeyEvent.VK_RIGHT)
 				x++;
 		}else{
-			
+			action=true;
 			if(KeyBoard.returnKeyPress()==KeyEvent.VK_UP){
 				placex=0;
 				placey=-1;
@@ -99,16 +99,12 @@ class LandPlayer extends Humanoid{
 				placey=0;
 			}
 		}		
-				savedkeypress=KeyBoard.returnKeyPress();
+		savedkeypress=KeyBoard.returnKeyPress();
 	}
 	
 	public Inventory updateInventory(){
 		
 		return inventory.update();
-	}
-	
-	public final Item activeItem(){
-		return inventory.returnActive();
 	}
 	
 	public void inventoryGive(Inventory other){
@@ -121,6 +117,10 @@ class LandPlayer extends Humanoid{
 		if(inventory==null)
 			inventory=new PlayerInventory();
 		inventory.give(item, amount);
+	}
+	
+	public final boolean itemActive(Item item){
+		return inventory.returnActive()!=null && inventory.returnActive()==item;
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
@@ -377,6 +377,7 @@ abstract class Humanoid extends LandObject{
 	protected int x, y;
 	protected int placex=1, placey=0;// square where items are placed if dropped out of the inventory
 	private static final Color placementcolor=new Color(75,175,100); 
+	protected boolean action=false;
 	
 	protected static final int[][]manimage=
 	   {{0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0},
@@ -415,7 +416,14 @@ abstract class Humanoid extends LandObject{
 	}
 	
 	public abstract void wantedMove(Isle island);
-	public abstract Inventory updateInventory();
+	
+	public abstract Inventory updateInventory();//dropped items
+	
+	public final boolean getAction(){
+		boolean tmp=action;
+		action=false;
+		return tmp;
+	}
 	
 	//paints the active item placement square
 	public void paint(Graphics g, int x, int y, int tilesize){
@@ -448,6 +456,10 @@ abstract class Humanoid extends LandObject{
 		this.y=y;
 	}
 	
+	public boolean itemActive(Item item){
+		return inventory.contains(item);
+	}
+	
 }
 
 class TribesHumaniod extends Humanoid{
@@ -457,6 +469,7 @@ class TribesHumaniod extends Humanoid{
 			setSprites();
 			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
 		}
+		inventory=new Inventory();
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
@@ -475,8 +488,17 @@ class TribesHumaniod extends Humanoid{
 		
 		for(int i=-1; i<2; i++){
 			for(int j=-1; j<2; j++){
-				if(island.insideMapPos(i+x,  j+y) && island.validMovePosition(i+x,  j+y)){
-					possiblemoves.add(new int[]{i+x,j+y});
+				if(island.insideMapPos(i+x,  j+y)){
+					if(!island.isEmpty(i+x,  j+y) && island.isBush(i+x,  j+y)){
+						placex=i;
+						placey=j;
+						action=true;
+						return;
+					}
+					
+					if(island.validMovePosition(i+x,  j+y)){
+						possiblemoves.add(new int[]{i+x,j+y});
+					}
 				}
 			}
 		}

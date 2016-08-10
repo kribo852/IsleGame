@@ -9,7 +9,7 @@ import java.awt.BasicStroke;
 class Raindrop{
 	static BufferedImage image=new BufferedImage(16,16, BufferedImage.TYPE_INT_ARGB);
 	double x , y , dx, dy;
-	static final Color raincoloured=new Color(25,150,150);
+	static final Color raincoloured=new Color(25,100,200);
 	static final Color firecoloured=new Color(200,185,25);
 	
 	static public void initializeBuffer(){
@@ -69,7 +69,7 @@ class Rainfall implements Runnable{
 		
 		Graphics g=rainbuffer[updateframe].getGraphics();
 		if(active){
-			if(RND.nextInt(100)==0){
+			if(RND.nextInt(25)==0){
 				((Graphics2D)g).setBackground(new Color(25, 50, 50, 40));
 				g.clearRect(0,0,800, 800);
 				paintLightning(g , 400, -10 , 192, lighcol , 0); 

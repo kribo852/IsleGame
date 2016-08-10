@@ -14,7 +14,7 @@ class Isle implements Runnable{
 	LandType[][] layout;
 	LandObject[][] objects;
 	
-	int[][] distance_to_sea;
+	short[][] distance_to_sea;
 	BufferedImage tile;
 	int seedx,seedy;//used to generate diff islands
 	LandPlayer landplayer;//null if at sea
@@ -101,8 +101,8 @@ class Isle implements Runnable{
 	}
 	
 	public LandType[][] slimArray(LandType[][] layout){
-		int minlandx=0;
-		int minlandy=0;
+		int minlandx=layout.length;
+		int minlandy=layout[0].length;
 		int maxlandx=0;
 		int maxlandy=0;
 		
@@ -143,23 +143,26 @@ class Isle implements Runnable{
 				
 				boolean nowateraround=true;
 				
-				for(int k=-1; k<2; k++){
-					for(int l=-1; l<2; l++){
-						if(insideMapPos(i+k , j+l)){
-							if(layout[i+k][j+l]==LandType.water){
-								nowateraround=false;
-								k=2;
-								break;
+				if(i==0 || i==layout.length-1 || j==0 || j==layout[0].length){
+					nowateraround=false;
+				}else{
+					for(int k=-1; k<2; k++){
+						for(int l=-1; l<2; l++){
+							if(insideMapPos(i+k , j+l)){
+								if(layout[i+k][j+l]==LandType.water){
+									nowateraround=false;
+									k=2;
+									break;
+								}
 							}
 						}
-					}
-				}	
+					}	
+				}
 				
 				if(nowateraround){
 					layout[i][j]=LandType.grass;
 					if(objects[i][j]==null){
-						double treeChance=Math.exp(-0.05*distance_to_sea[i][j]);
-						if(RND.nextDouble()>treeChance){
+						if(RND.nextDouble()<treeChance(i,j)){
 							objects[i][j]=singletontreefactory.getTree(true);		
 						}
 					}
@@ -206,8 +209,7 @@ class Isle implements Runnable{
 	
 	public boolean updateLand(){
 		
-		{
-			
+		{	
 			int treex=RND.nextInt(layout.length);
 			int treey=RND.nextInt(layout[0].length);
 			if(RND.nextInt(3)==0){
@@ -232,15 +234,14 @@ class Isle implements Runnable{
 							}
 						}
 					}
-					double treeChance=Math.exp(-0.05*distance_to_sea[treex][treey]);
-					if(sumtrees/activesquares<treeChance && !livingtrees.isEmpty()){
+					if(!livingtrees.isEmpty() && sumtrees/activesquares<treeChance(treex, treey)){
 						objects[treex][treey]=singletontreefactory.getLiveTreeOfType(livingtrees.get(RND.nextInt(livingtrees.size())));
 					}
 				}
 			}
 		}
 		
-		updateHumanoidMovements(population);
+		updateHumanoids(population);
 		{
 			Inventory tmp=landplayer.updateInventory();
 			if(tmp!=null){
@@ -262,28 +263,13 @@ class Isle implements Runnable{
 			}
 		}
 		
-		{//tree cutting
-			if(KeyBoard.returnKeyPress()==KeyEvent.VK_SPACE){
-				if(landplayer.activeItem()==Item.stoneaxe){
-					if(insideMapPos(landplayer.getPlaceX(), landplayer.getPlaceY())){
-						if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()]!=null)
-							if(isTree(landplayer.getPlaceX(),landplayer.getPlaceY())){
-								Inventory dropped=objects[landplayer.getPlaceX()][landplayer.getPlaceY()].returnInventory();
-								objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=new LandObject();
-								objects[landplayer.getPlaceX()][landplayer.getPlaceY()].inventoryGive(dropped);
-						}	
-					}
-				}
-			}
-		}
-		
 		if(rainfall.update()){
 			new Thread(rainfall).start();
 		}	
 		return (distance_to_sea[landplayer.x][landplayer.y]==1 && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
 	}
 	
-	public void updateHumanoidMovements(final Collection<Humanoid> population){
+	public void updateHumanoids(final Collection<Humanoid> population){
 		
 		for(Humanoid human: population){
 			int cposx=human.getX();
@@ -306,6 +292,24 @@ class Isle implements Runnable{
 					human.setX(cposx);
 					human.setY(cposy);
 				}
+				
+			//the full treecutting is still to be implemented
+			if(human.getAction()){
+				if(insideMapPos(human.getPlaceX(), human.getPlaceY())){
+					if(objects[human.getPlaceX()][human.getPlaceY()]!=null){
+						if(isBush(human.getPlaceX(),human.getPlaceY())){
+							Inventory dropped=objects[human.getPlaceX()][human.getPlaceY()].returnInventory();
+								objects[human.getPlaceX()][human.getPlaceY()]=new LandObject();
+								objects[human.getPlaceX()][human.getPlaceY()].inventoryGive(dropped);
+						}
+						else if(isTree(human.getPlaceX(),human.getPlaceY()) && human.itemActive(Item.stoneaxe)){
+							Inventory dropped=objects[human.getPlaceX()][human.getPlaceY()].returnInventory();
+								objects[human.getPlaceX()][human.getPlaceY()]=new LandObject();
+								objects[human.getPlaceX()][human.getPlaceY()].inventoryGive(dropped);
+						}
+					}
+				}
+			}	
 		}
 	}
 	
@@ -321,6 +325,14 @@ class Isle implements Runnable{
 	boolean isTree(int x, int y){
 		Class c=objects[x][y].getClass();
 		return (c==Tree.class || c==FractalTree.class || c==PineTree.class || c==FractalBush.class);
+	}
+	
+	boolean isBush(int x, int y){
+		return objects[x][y].getClass()==FractalBush.class;
+	}
+	
+	boolean isEmpty(int x, int y){
+		return objects[x][y]==null;
 	}
 	
 	boolean isHumanoid(int x, int y){
@@ -344,7 +356,6 @@ class Isle implements Runnable{
 					if(l!=LandType.water){
 						g.drawImage(LandTexture.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom square
 					}
-					g.setColor(Color.black);
 				}
 			}	
 		}
@@ -380,8 +391,8 @@ class Isle implements Runnable{
 			g.drawImage(tile, x, y, (int)(layout.length*0.4) , (int)(layout[0].length*0.4) , null);
 	}
 	
-	int[][] calculateSeaDistance(LandType[][] layout){
-		int[][] rtn=new int[layout.length][layout[0].length];
+	short[][] calculateSeaDistance(LandType[][] layout){
+		short[][] rtn=new short[layout.length][layout[0].length];
 		ArrayList<int[]> positions=new ArrayList<int[]>();
 		for(int i=0; i<rtn.length; i++){
 			for(int j=0; j<rtn[i].length; j++){
@@ -408,19 +419,11 @@ class Isle implements Runnable{
 				for(int j=-1; j<2; j++){
 					if(i!=0 || j!=0){
 						if(insideMapPos(tmp[0]+i,tmp[1]+j)){
-							if(rtn[tmp[0]+i][tmp[1]+j]==-1){
+							if(rtn[tmp[0]+i][tmp[1]+j]==-1|| rtn[tmp[0]+i][tmp[1]+j]>rtn[tmp[0]][tmp[1]]+1){
 								if(rtn[tmp[0]][tmp[1]]==0 && layout[tmp[0]+i][tmp[1]+j]==LandType.water){
 									rtn[tmp[0]+i][tmp[1]+j]=0;
 								}else{
-									rtn[tmp[0]+i][tmp[1]+j]=rtn[tmp[0]][tmp[1]]+1;
-								}
-								positions.add(new int[]{tmp[0]+i, tmp[1]+j});
-							
-							}else if(rtn[tmp[0]+i][tmp[1]+j]>rtn[tmp[0]][tmp[1]]+1){
-								if(rtn[tmp[0]][tmp[1]]==0 && layout[tmp[0]+i][tmp[1]+j]==LandType.water){
-									rtn[tmp[0]+i][tmp[1]+j]=0;
-								}else{
-									rtn[tmp[0]+i][tmp[1]+j]=rtn[tmp[0]][tmp[1]]+1;
+									rtn[tmp[0]+i][tmp[1]+j]=(short)(rtn[tmp[0]][tmp[1]]+1);
 								}
 								positions.add(new int[]{tmp[0]+i, tmp[1]+j});
 							}
@@ -430,4 +433,6 @@ class Isle implements Runnable{
 		}
 		return rtn;
 	}
+	
+	public double treeChance(int x, int y){return Math.min(0.5, 1-Math.exp(-0.036*distance_to_sea[x][y]));}
 }

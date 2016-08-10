@@ -77,7 +77,6 @@ class LandTexture{
 				tmp.setRGB(i,j,groundcolour.getRGB());
 			}	
 		}
-		//Graphics g=rtn.getGraphics();
 		
 		for(int iteration=0; iteration<320; iteration++){
 			
