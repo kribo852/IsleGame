@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.awt.Graphics;
 
-class LandObject{
+abstract class LandObject{
 	static BufferedImage sprites[];
 	
 	Inventory inventory=null;
@@ -19,6 +19,7 @@ class LandObject{
 		return inventory.getSprite();
 	}
 	
+	// these are prone to error{
 	public void inventoryGive(Inventory other){
 		if(inventory==null)
 			inventory=other;
@@ -29,12 +30,13 @@ class LandObject{
 	public void inventoryGive(Item item, int amount){
 		inventory.give(item, amount);
 	}
+   //}should be abstract
 	
 	public Inventory returnInventory(){
 		return inventory;
 	}
 	
-	protected static void maskSpriteColour(Color c){
+	protected static void maskSpriteColour(Color c , BufferedImage sprites[]){
 		if(sprites==null)
 			return;
 		
@@ -52,10 +54,41 @@ class LandObject{
 		}
 	}
 	
+	public abstract void paint(Graphics g, int x, int y, int tilesize);	
+}
+
+class InventoryHolder extends LandObject{
 	public void paint(Graphics g, int x, int y, int tilesize){
 		g.drawImage(inventory.getSprite(), x*tilesize,  y*tilesize, tilesize, tilesize,null);
 	}
+}
+
+class LayeredDecorator extends LandObject{
+	ArrayList<LandObject> layers=null;
 	
+	public LayeredDecorator(){
+		layers=new ArrayList<LandObject>();
+	}
+	
+	public void addLayer(LandObject l){
+		layers.add(l);
+	}
+	
+	public LandObject removeLayer(LandObject l){
+		for(int i=0; i<layers.size(); i++)
+			if(layers.get(i)!=l){
+				return layers.get(i);
+			}
+			
+		return null;
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		
+		for(LandObject l: layers){
+			l.paint( g,  x,  y,  tilesize);
+		}
+	}
 }
 	
 class LandPlayer extends Humanoid{
@@ -64,11 +97,8 @@ class LandPlayer extends Humanoid{
 	int savedkeypress=0;
 	
 	public LandPlayer(){
+		super();
 		inventory=InventoryFactory.createPlayerInventory();//also gives some starting items
-		if(sprites==null){
-			setSprites();
-			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
-		}
 	}
 	
 	public void wantedMove(Isle island){
@@ -133,14 +163,18 @@ class LandPlayer extends Humanoid{
 
 class Tree extends LandObject{
 	
+	public Tree(){
+		setSprites();
+	}
+	
 	//best singleton pattern 
 	static void setSprites(){
 		if(sprites==null){
 			sprites=new BufferedImage[1];
 	
 			try{
-				sprites[0]=ImageIO.read(new File("jungle_tree.png"));
-				maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
+				sprites[0]=ImageIO.read(new File("Jungle_Tree.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
 				
 			}catch(IOException e){
 		
@@ -353,6 +387,11 @@ class FractalBush extends FractalTree{
 		}
 	}
 	
+	//in order to normalize paint-bush from layeredobject
+	public void paint(Graphics g, int x, int y, int tilesize){
+		paint(g,x,y,tilesize,0);
+	}
+	
 	public void paint(Graphics g, int x, int y, int tilesize, double windangle){
 		Color c=super.barkColour;
 		if(treealive){
@@ -361,7 +400,7 @@ class FractalBush extends FractalTree{
 		if(trunk!=null){
 			for(int i=0; i<trunk.length; i++){
 				int xoffset=(int)(tilesize*branchpositions[i]);
-				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+tilesize/2, windangle/4);
+				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+3*tilesize/4, windangle/4);
 			}
 		}
 		super.barkColour=c;
@@ -372,12 +411,18 @@ class FractalBush extends FractalTree{
 	}
 }
 
+class Reed extends FractalBush{
+	
+	
+}
+
 abstract class Humanoid extends LandObject{
 	
 	protected int x, y;
 	protected int placex=1, placey=0;// square where items are placed if dropped out of the inventory
 	private static final Color placementcolor=new Color(75,175,100); 
 	protected boolean action=false;
+	static BufferedImage sprites[];
 	
 	protected static final int[][]manimage=
 	   {{0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0},
@@ -397,6 +442,11 @@ abstract class Humanoid extends LandObject{
 		{0,0,0,0,1,0,0,0,1,0,1,0,0,0,0,0},
 		{0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0}};
 		
+	Humanoid(){
+		if(sprites==null)
+			setSprites();
+	}
+		
 		//best singleton pattern 
 	static void setSprites(){
 		sprites=new BufferedImage[1];
@@ -412,7 +462,9 @@ abstract class Humanoid extends LandObject{
 				if(manimage[i][j]==1)
 					g.fillRect(j*2, i*2 ,2 ,2);
 			}
-		}					
+		}
+		
+		maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);			
 	}
 	
 	public abstract void wantedMove(Isle island);
@@ -465,10 +517,7 @@ abstract class Humanoid extends LandObject{
 class TribesHumaniod extends Humanoid{
 	
 	public TribesHumaniod(){
-		if(sprites==null){
-			setSprites();
-			maskSpriteColour(new Color(sprites[0].getRGB(0,0)));
-		}
+		super();
 		inventory=new Inventory();
 	}
 	
@@ -509,6 +558,39 @@ class TribesHumaniod extends Humanoid{
 			y=tmp[1];
 		}
 	}
+}
+
+abstract class Building extends LandObject{
+	
+	
+}
+
+class Boat extends Building{
+	static BufferedImage[] sprites=null;
+	
+	public Boat(){
+		setSprites();
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		if(sprites==null){
+			sprites=new BufferedImage[1];
+	
+			try{
+				sprites[0]=ImageIO.read(new File("Boat.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
+				
+			}catch(IOException e){
+		
+			}
+		}
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+	}
+	
 }
 
 class SingletonTreeFactory{

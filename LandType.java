@@ -4,7 +4,7 @@ import java.awt.image.BufferedImage;
 import java.util.Random;
 
 enum LandType{
-	grass(0, 100, 150 ,50),water(1, 25, 100, 150),dirt(2 , 150 ,150 , 25),clay(3, 190,185,200);
+	grass(0, 100, 150 ,50),water(1, 25, 100, 150),sand(2 , 150 ,150 , 25),clay(3, 100,115,130);
 	
 	private int value, red, green, blue; 
 	private LandType(int value, int red, int green, int blue) {
@@ -109,7 +109,7 @@ class LandTexture{
 			grasstiles[i]=makeGrassTexture(size, LandType.grass.getColour());
 			
 		for(int i=0; i<sandtiles.length; i++)
-			sandtiles[i]=makeSandTexture(size, LandType.dirt.getColour());
+			sandtiles[i]=makeSandTexture(size, LandType.sand.getColour());
 			
 			claytile=makeClayTexture(size, LandType.clay.getColour());
 	}
@@ -122,7 +122,7 @@ class LandTexture{
 			seed%=grasstiles.length;
 			return grasstiles[seed];
 		}
-		else if(l==LandType.dirt){
+		else if(l==LandType.sand){
 			seed%=sandtiles.length;
 			return sandtiles[seed];
 		}else if(l==LandType.clay)

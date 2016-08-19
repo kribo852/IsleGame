@@ -93,6 +93,14 @@ class Inventory{
 		
 		return null;
 	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(getSprite(), x*tilesize,  y*tilesize, tilesize, tilesize,null);
+	}
+	
+	public Inventory returnInventory(){
+		return this;
+	}
 }
 
 class PlayerInventory extends Inventory{
@@ -239,150 +247,4 @@ class InventoryFactory{
 	
 	
 	
-}
-
-// a class that transforms items in crafting formations on the ground
-final class ItemAssembler{
-	
-	static final Inventory pfib= new Inventory(Item.plantfiber,1);
-	static final Inventory stone=new Inventory(Item.stone     ,1);
-	static final Inventory stick=new Inventory(Item.stick     ,1);
-	static final Inventory rop=new Inventory(Item.rope     ,1);
-	
-	static final Inventory stone_axe=new Inventory(Item.stoneaxe     ,1);
-	
-	static class Recipe{
-		
-		public Recipe(){
-		
-		}
-		
-		public void setReturnItem(Inventory outbound){
-			this.outbound=outbound;
-		}
-		
-		Inventory[][] recipeinventory;
-		Inventory outbound;//the returned item(s)
-		
-		public boolean lessOrEqual(final LandObject[][] map, int x, int y){
-			for(int i=0; i<recipeinventory.length; i++){
-				for(int j=0; j<recipeinventory[i].length; j++){
-					if(i+x>=0 && i+x<map.length && j+y>=0 && j+y<map[0].length){
-						
-						Inventory tmp=new Inventory();
-						
-						if(map[i+x][j+y]==null || map[i+x][j+y].getClass()!=LandObject.class){
-						
-						}else{
-							tmp.give(map[i+x][j+y].returnInventory());
-						} 
-							
-							if(recipeinventory[i][j]!=null && tmp.LessItems(recipeinventory[i][j])){
-								return false;
-							}else{
-								
-							}
-							
-					}else{
-						return false;
-					}
-				}
-			}
-			
-			return true;
-		}
-		
-		public void SubtractItems(final LandObject[][] map, int x, int y){
-			for(int i=0; i<recipeinventory.length; i++){
-				for(int j=0; j<recipeinventory[i].length; j++){
-					if(i+x>=0 && i+x<map.length && j+y>=0 && j+y<map[0].length){
-						
-						Inventory tmp=new Inventory();
-						//this is strange
-						if(map[i+x][j+y]==null || map[i+x][j+y].getClass()!=LandObject.class){
-						
-						}else{
-							tmp.give(map[i+x][j+y].returnInventory());
-						} 
-							
-						if(recipeinventory[i][j]!=null){
-							map[i+x][j+y]=new LandObject();
-							tmp.subtractOthersItems(recipeinventory[i][j]);
-							if(!tmp.returnItems().isEmpty())
-								map[i+x][j+y].inventoryGive(tmp);
-							else
-								map[i+x][j+y]=null;
-						}
-					}
-				}
-			}
-		}
-		
-		public int getWidth(){return recipeinventory.length;}
-		public int getHeight(){return recipeinventory[0].length;}
-		
-		public Inventory returnItems(){
-			Inventory rtn=new Inventory();
-			rtn.give(outbound);
-			return rtn;
-		}
-	}
-	
-	 static Recipe createStoneAxeRecipe(){
-		Recipe rtn=new Recipe();
-		Inventory[][] recipeinventory=new Inventory[][]{{pfib,null,null},{stone,stick,null},{pfib,null,null}}; 
-		
-		rtn.recipeinventory=recipeinventory;
-		rtn.setReturnItem(new Inventory(Item.stoneaxe,1));
-		return rtn;
-	}
-	
-	static Recipe createRopeRecipe(){
-		Recipe rtn=new Recipe();
-		Inventory[][] recipeinventory=new Inventory[][]{{pfib,pfib,pfib,pfib}}; 
-		
-		rtn.recipeinventory=recipeinventory;
-		rtn.setReturnItem(new Inventory(Item.rope,1));
-		return rtn;
-	}
-	
-	static Recipe createFishnetRecipe(){
-		Recipe rtn=new Recipe();
-		Inventory[][] recipeinventory=new Inventory[][]{{rop,null,rop,null},{null,rop,null,rop},
-			{rop,null,rop,null},{null,rop,null,rop}}; 
-		
-		rtn.recipeinventory=recipeinventory;
-		rtn.setReturnItem(new Inventory(Item.fishnet,1));
-		return rtn;
-	}
-	
-	//too bad that this manipulates map
-	public static void craftItem(LandObject[][] map, int x, int y){
-		
-		if(craftItem(map,x,y,createStoneAxeRecipe()))
-			return;
-			
-		if(craftItem(map,x,y,createRopeRecipe()))
-			return;
-			
-		if(craftItem(map,x,y,createFishnetRecipe()))
-			return;
-	}
-	
-	private static boolean craftItem(LandObject[][] map, int x, int y, Recipe r){
-		
-		for(int i=0; i>=-r.getWidth(); i--){
-			for(int j=0; j>=-r.getHeight(); j--){
-				if(r.lessOrEqual(map, x+i, y+j)){
-					r.SubtractItems(map, x+i, y+j);
-					if(map[x][y]==null)
-						map[x][y]=new LandObject();
-						
-					map[x][y].inventoryGive(r.returnItems());
-					return true;
-				}
-			}	
-		}
-		return false;
-	}
 }

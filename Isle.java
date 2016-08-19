@@ -48,7 +48,7 @@ class Isle implements Runnable{
 			}
 		}
 		
-		layout[islesize/2][islesize/2]=LandType.dirt;
+		layout[islesize/2][islesize/2]=LandType.sand;
 		islandCreateFloodFill(layout, islesize/2, islesize/2,0);
 		
 		layout=slimArray(layout);
@@ -57,8 +57,8 @@ class Isle implements Runnable{
 		
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
-				if(layout[i][j]==LandType.dirt){
-					tile.setRGB(i, j, LandType.dirt.getColour().getRGB());
+				if(layout[i][j]==LandType.sand){
+					tile.setRGB(i, j, LandType.sand.getColour().getRGB());
 				}
 			}	
 		}
@@ -84,12 +84,12 @@ class Isle implements Runnable{
 							return true;
 						
 						if(layout[newx][newy]==LandType.water){
-							layout[newx][newy]=LandType.dirt;
+							layout[newx][newy]=LandType.sand;
 							progress.add(new Tuple<Integer>(newx , newy));
 						}
 						
 						if((depth<80 && Map.randomNumber(newx*seedx , newy*seedy)%299==0) || (depth>=80 && Map.randomNumber(newx*seedx , newy*seedy)%697==0)){
-							layout[newx][newy]=LandType.dirt;
+							layout[newx][newy]=LandType.sand;
 							if(islandCreateFloodFill(layout, newx, newy,depth+1))
 								return true;
 						}
@@ -108,7 +108,7 @@ class Isle implements Runnable{
 		
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
-				if(layout[i][j]==LandType.dirt){
+				if(layout[i][j]==LandType.sand){
 					minlandx=Math.min(i , minlandx);
 					minlandy=Math.min(j , minlandy);
 					maxlandx=Math.max(i , maxlandx);
@@ -166,8 +166,11 @@ class Isle implements Runnable{
 							objects[i][j]=singletontreefactory.getTree(true);		
 						}
 					}
-				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.dirt){
-					layout[i][j]=LandType.clay;
+				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.sand){
+					if(RND.nextBoolean())
+						layout[i][j]=LandType.clay;
+					else
+						layout[i][j]=LandType.grass;
 				}
 			}	
 		}
@@ -177,9 +180,8 @@ class Isle implements Runnable{
 				if(layout[i][j]!=LandType.water){
 					if(RND.nextInt(200)==0){
 						int rnd=RND.nextInt(20);
-						objects[i][j]=new LandObject();
+						objects[i][j]=new InventoryHolder();
 						objects[i][j].inventoryGive(InventoryFactory.createGroundInventory());
-						
 					
 					}else if(RND.nextInt(1000)==0){
 						Humanoid h=new TribesHumaniod();
@@ -196,7 +198,7 @@ class Isle implements Runnable{
 		landplayer.setX(layout.length/2);
 		landplayer.setY(layout[0].length/2);
 		
-		while(layout[landplayer.x][landplayer.y]!=LandType.dirt){
+		while(layout[landplayer.x][landplayer.y]!=LandType.sand){
 			landplayer.setX(RND.nextInt(layout.length));
 			landplayer.setY(RND.nextInt(layout[0].length));
 		}
@@ -217,13 +219,13 @@ class Isle implements Runnable{
 					objects[treex][treey]=singletontreefactory.getDeadTreeOfType(objects[treex][treey].getClass());
 				}
 			}else{
-				if(layout[treex][treey]==LandType.grass && objects[treex][treey]==null){
+				if(layout[treex][treey]==LandType.grass && isEmpty(treex, treey)){
 					double sumtrees=0, activesquares=0;
 					ArrayList<Class> livingtrees=new ArrayList<Class>();
 					
 					for(int i=-2; i<3; i++){
 						for(int j=-2; j<3; j++){
-							if(insideMapPos(treex+i, treey+j) && objects[treex+i][treey+j]!=null){
+							if(insideMapPos(treex+i, treey+j) && !isEmpty(treex+i,treey+j)){
 								++activesquares;
 								if(isTree(treex+i, treey+j)){
 									++sumtrees;
@@ -247,11 +249,12 @@ class Isle implements Runnable{
 			if(tmp!=null){
 				if(insideMapPos(landplayer.getPlaceX(), landplayer.getPlaceY()) &&
 				layout[landplayer.getPlaceX()][landplayer.getPlaceY()]!=LandType.water){
-					//empty placeholding landbjects with inventoies should never exist and hence are not concerned
+					//empty placeholding landbjects with inventories should never exist and hence are not concerned
 					if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()]==null){
-						objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=new LandObject();
+						objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=new InventoryHolder();
 						objects[landplayer.getPlaceX()][landplayer.getPlaceY()].inventoryGive(tmp);
-						ItemAssembler.craftItem(objects,landplayer.getPlaceX(), landplayer.getPlaceY());
+						ItemAssembler.craft(objects,landplayer.getPlaceX(), landplayer.getPlaceY());
+						BuildingAssembler.craft(objects,landplayer.getPlaceX(), landplayer.getPlaceY());
 					}
 					else{
 						landplayer.inventoryGive(tmp);
@@ -266,7 +269,7 @@ class Isle implements Runnable{
 		if(rainfall.update()){
 			new Thread(rainfall).start();
 		}	
-		return (distance_to_sea[landplayer.x][landplayer.y]==1 && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
+		return (canSail(landplayer) && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
 	}
 	
 	public void updateHumanoids(final Collection<Humanoid> population){
@@ -279,13 +282,26 @@ class Isle implements Runnable{
 			boolean moved=false;
 			if(cposx!=human.getX() || cposy!=human.getY())
 				if(insideMapPos(human.getX() , human.getY()) && validMovePosition(human.getX() , human.getY())){
-					//items picked up by an inhabitant
-					if(objects[human.getX()][human.getY()]!=null){
-						objects[cposx][cposy].inventoryGive(objects[human.getX()][human.getY()].returnInventory());
+					if(isBush(human.getX(), human.getY())){
+						LayeredDecorator laydec=new LayeredDecorator();
+						laydec.addLayer(human);
+						laydec.addLayer(objects[human.getX()][human.getY()]);
+						objects[human.getX()][human.getY()]=laydec;
 					}
+					//items picked up by an inhabitant
+					else{
+					
+						if(objects[human.getX()][human.getY()]!=null && objects[human.getX()][human.getY()].getClass()==InventoryHolder.class){
+							objects[cposx][cposy].inventoryGive(objects[human.getX()][human.getY()].returnInventory());
+						}
+						objects[human.getX()][human.getY()]=human;
+				    }
 				
-					objects[human.getX()][human.getY()]=objects[cposx][cposy];
-					objects[cposx][cposy]=null;
+					if(objects[cposx][cposy].getClass()==LayeredDecorator.class){
+						objects[cposx][cposy]=((LayeredDecorator)objects[cposx][cposy]).removeLayer(human);
+					}else{
+						objects[cposx][cposy]=null;
+				    }
 					moved=true;
 					
 				}else{
@@ -299,12 +315,12 @@ class Isle implements Runnable{
 					if(objects[human.getPlaceX()][human.getPlaceY()]!=null){
 						if(isBush(human.getPlaceX(),human.getPlaceY())){
 							Inventory dropped=objects[human.getPlaceX()][human.getPlaceY()].returnInventory();
-								objects[human.getPlaceX()][human.getPlaceY()]=new LandObject();
+								objects[human.getPlaceX()][human.getPlaceY()]=new InventoryHolder();
 								objects[human.getPlaceX()][human.getPlaceY()].inventoryGive(dropped);
 						}
 						else if(isTree(human.getPlaceX(),human.getPlaceY()) && human.itemActive(Item.stoneaxe)){
 							Inventory dropped=objects[human.getPlaceX()][human.getPlaceY()].returnInventory();
-								objects[human.getPlaceX()][human.getPlaceY()]=new LandObject();
+								objects[human.getPlaceX()][human.getPlaceY()]=new InventoryHolder();
 								objects[human.getPlaceX()][human.getPlaceY()].inventoryGive(dropped);
 						}
 					}
@@ -315,30 +331,52 @@ class Isle implements Runnable{
 	
 	boolean validMovePosition(int x, int y){
 		if(layout[x][y]!=LandType.water){
-					if(objects[x][y]==null || (!isTree(x,y) && !isHumanoid(x,y))){
+					if(isEmpty(x,y) || ((!isTree(x,y) || isBush(x,y)) && !isHumanoid(x,y) && !isBuilding(x,y))){
 						return true;
 					}
 			}
 		return false;
 	}
 	
-	boolean isTree(int x, int y){
-		Class c=objects[x][y].getClass();
-		return (c==Tree.class || c==FractalTree.class || c==PineTree.class || c==FractalBush.class);
-	}
-	
-	boolean isBush(int x, int y){
-		return objects[x][y].getClass()==FractalBush.class;
-	}
-	
 	boolean isEmpty(int x, int y){
 		return objects[x][y]==null;
 	}
 	
+	boolean isTree(int x, int y){
+		if(isEmpty(x,y))return false;//null is not a tree
+		return (objects[x][y] instanceof Tree);
+	}
+	
+	boolean isBush(int x, int y){
+		if(isEmpty(x,y))return false;//null is not a bush
+		return (objects[x][y] instanceof FractalBush);
+	}
+	
 	boolean isHumanoid(int x, int y){
-		Class c=objects[x][y].getClass();
-		return (c==LandPlayer.class || c==TribesHumaniod.class);
+		if(isEmpty(x,y))return false;//null is not a bush
+		return (objects[x][y] instanceof Humanoid);
+	}
+	
+	boolean isBuilding(int x, int y){
+		if(isEmpty(x,y))return false;//null is not a bush
+		return (objects[x][y] instanceof Building);
+	}
+	
+	boolean canSail(LandPlayer h){
+		
+		for(int i=-1; i<2; i++){
+			for(int j=-1; j<2; j++){
+				if(insideMapPos(i+h.getX() , j+h.getY()) ){
+					if(objects[i+h.getX()][j+h.getY()] instanceof Boat){
+						if(distance_to_sea[i+h.getX()][j+h.getY()]<=1){
+							return true;
+						}
+					}
+				}
+			}	
 		}
+		return false;
+	}
 	
 	//trying to standardize these functions
 	boolean insideMapPos(int x, int y){return(x>=0 && x<layout.length && y>=0 && y<layout[x].length);}
@@ -364,7 +402,7 @@ class Isle implements Runnable{
 		for(int i=-numtiles; i<numtiles; i++){
 			for(int j=-numtiles; j<numtiles; j++){
 				if(insideMapPos(i+landplayer.x,j+landplayer.y)){
-					
+						
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
 						
 						if(isTree(i+landplayer.x,j+landplayer.y) && objects[i+landplayer.x][j+landplayer.y].getClass()!=Tree.class){
@@ -381,7 +419,7 @@ class Isle implements Runnable{
 			
 		rainfall.paint(g,screenwidth,screenheight);
 		
-		if(distance_to_sea[landplayer.x][landplayer.y]==1)
+		if(canSail(landplayer))
 			Tooltip.paintSailTip(g);
 		Tooltip.paintFadingTip(g);
 	}

@@ -20,8 +20,6 @@ public static void main(String[] args){
 	jframe.addKeyListener(new KeyBoard());
 	
 	Map map=new Map();
-	
-	Random RND=new Random();
 	Graphics g=jframe.getGraphics(); 
 	BufferedImage sea=new BufferedImage(screensize,screensize,1);
 	
@@ -29,6 +27,9 @@ public static void main(String[] args){
 	
 	BufferedImage drawbuffer=new BufferedImage(screensize,screensize,BufferedImage.TYPE_INT_ARGB);
 	Graphics drawbuffergraphics=drawbuffer.getGraphics();
+	
+	long millispassed=System.currentTimeMillis();
+	
 	while(true){
 		map.update();
 		
@@ -39,7 +40,8 @@ public static void main(String[] args){
 		g.drawImage(drawbuffer, 0, 0 , null);
 		
 		try {
-			Thread.sleep(25);
+			Thread.sleep(Math.max(0, 50+millispassed-System.currentTimeMillis()));
+			millispassed=System.currentTimeMillis();
 		} catch(InterruptedException ex) {
 			Thread.currentThread().interrupt();
 		}
@@ -49,7 +51,7 @@ public static void main(String[] args){
 	private static void makeSea(int screensize, BufferedImage sea){
 		for(int j=0; j<screensize; j++){
 			double redbase=75;
-			double greenbase=75;
+			double greenbase=100;
 			double bluebase=125;
 			double scale=(0.35*(screensize-j-1))/screensize;
 			scale+=1.0;

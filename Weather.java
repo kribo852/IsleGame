@@ -59,7 +59,7 @@ class Rainfall implements Runnable{
 		
 		for(int i=0; i<rain.length; i++){
 			if(active && rain[i].y>1000){
-				rain[i].y=-RND.nextInt(500);
+				rain[i].y=-RND.nextInt(750);
 				rain[i].x=RND.nextInt(850);
 			}else{
 				rain[i].x+=rain[i].dx;
@@ -72,7 +72,7 @@ class Rainfall implements Runnable{
 			if(RND.nextInt(25)==0){
 				((Graphics2D)g).setBackground(new Color(25, 50, 50, 40));
 				g.clearRect(0,0,800, 800);
-				paintLightning(g , 400, -10 , 192, lighcol , 0); 
+				paintLightning(g , 200+RND.nextInt(400), -10 , 200, lighcol , 0); 
 				
 			}else{
 				((Graphics2D)g).setBackground(new Color(25, 50, 50, 80));
@@ -106,7 +106,7 @@ class Rainfall implements Runnable{
 			
 			active=!active;
 		}
-		windangle+=(Math.PI/100)%Math.PI;
+		windangle+=(active? Math.PI/50 : Math.PI/400)%Math.PI;
 		
 		return rtn;
 	}
@@ -121,7 +121,7 @@ class Rainfall implements Runnable{
 		if(depth==0){
 			g.setColor(lighcol);
 		}
-		if(depth>10)return;
+		if(depth>5)return;
 		
 		do{
 			double nextxlen=RND.nextDouble()*length;
