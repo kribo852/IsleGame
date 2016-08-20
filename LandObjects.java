@@ -593,6 +593,52 @@ class Boat extends Building{
 	
 }
 
+class FirePlace extends Building{
+	static BufferedImage[] sprites=null;
+	FireFlame[] particles;
+	
+	public FirePlace(){
+		setSprites();
+		particles=new FireFlame[15];
+		for(int i=0; i<particles.length; i++){
+			particles[i]=new FireFlame();
+			setFlamePosition(particles[i]);
+		}
+	}
+	
+	private void setFlamePosition(FireFlame fireflame){
+		fireflame.x=(new Random()).nextInt(32);
+		fireflame.y=8;
+		fireflame.lifetime=2+(new Random()).nextInt(12);
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		if(sprites==null){
+			sprites=new BufferedImage[1];
+	
+			try{
+				sprites[0]=ImageIO.read(new File("FirePlace.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
+				
+			}catch(IOException e){
+		
+			}
+		}
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+		
+		for(FireFlame fireflame: particles){
+			if(fireflame.update()){
+				setFlamePosition(fireflame);
+			}
+			g.drawImage(FireFlame.image, x*tilesize+(int)fireflame.getX(),  y*tilesize+(int)fireflame.getY(), null);		
+		}
+	}
+}
+
 class SingletonTreeFactory{
 	
 	private int currenttreecounter=0;

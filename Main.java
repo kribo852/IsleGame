@@ -20,6 +20,8 @@ public static void main(String[] args){
 	jframe.addKeyListener(new KeyBoard());
 	
 	Map map=new Map();
+	Rainfall rainfall=new Rainfall();
+	
 	Graphics g=jframe.getGraphics(); 
 	BufferedImage sea=new BufferedImage(screensize,screensize,1);
 	
@@ -36,11 +38,12 @@ public static void main(String[] args){
 		drawbuffergraphics.drawImage(sea, 0, 0, null);
 		map.paint(drawbuffergraphics, screensize, screensize);
 		
-		
+		rainfall.paint(drawbuffergraphics,screensize,screensize);
+		new Thread(rainfall).start();
 		g.drawImage(drawbuffer, 0, 0 , null);
 		
 		try {
-			Thread.sleep(Math.max(0, 50+millispassed-System.currentTimeMillis()));
+			Thread.sleep(Math.max(0, 75+millispassed-System.currentTimeMillis()));
 			millispassed=System.currentTimeMillis();
 		} catch(InterruptedException ex) {
 			Thread.currentThread().interrupt();

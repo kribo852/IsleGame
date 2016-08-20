@@ -18,7 +18,6 @@ class Isle implements Runnable{
 	BufferedImage tile;
 	int seedx,seedy;//used to generate diff islands
 	LandPlayer landplayer;//null if at sea
-	Rainfall rainfall;
 	ArrayList<Humanoid> population;
 	SingletonTreeFactory singletontreefactory;
 	static Random RND=new Random();
@@ -165,6 +164,10 @@ class Isle implements Runnable{
 						if(RND.nextDouble()<treeChance(i,j)){
 							objects[i][j]=singletontreefactory.getTree(true);		
 						}
+						else if(RND.nextInt(250)==0){
+							objects[i][j]=new FirePlace();
+						}
+						
 					}
 				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.sand){
 					if(RND.nextBoolean())
@@ -205,8 +208,6 @@ class Isle implements Runnable{
 		
 		objects[landplayer.getX()][landplayer.getY()]=landplayer;
 		population.add(landplayer);
-		rainfall=new Rainfall();
-		new Thread(rainfall).start();
 	}
 	
 	public boolean updateLand(){
@@ -266,9 +267,6 @@ class Isle implements Runnable{
 			}
 		}
 		
-		if(rainfall.update()){
-			new Thread(rainfall).start();
-		}	
 		return (canSail(landplayer) && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
 	}
 	
@@ -406,7 +404,7 @@ class Isle implements Runnable{
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
 						
 						if(isTree(i+landplayer.x,j+landplayer.y) && objects[i+landplayer.x][j+landplayer.y].getClass()!=Tree.class){
-							double angle=rainfall.getWindAngle()+Math.PI*(i+landplayer.x+(j+landplayer.y)/3.0)/10;
+							double angle=Rainfall.getWindAngle()+Math.PI*(i+landplayer.x+(j+landplayer.y)/3.0)/10;
 							angle=(Math.PI/12)*Math.sin(angle);
 							((FractalTree)objects[i+landplayer.x][j+landplayer.y]).paint(g,i+numtiles,j+numtiles,scalex,angle);
 						}else{
@@ -416,8 +414,6 @@ class Isle implements Runnable{
 				}
 			}	
 		}
-			
-		rainfall.paint(g,screenwidth,screenheight);
 		
 		if(canSail(landplayer))
 			Tooltip.paintSailTip(g);
