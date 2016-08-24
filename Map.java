@@ -17,7 +17,7 @@ public Map(){
 	ilands=new Isle[sizex][sizey];
 	refreshAll();
 	seaplayer=new Player();
-	LandTexture.initialize(40);
+	
 	SeaCamera.initializeCamera(seaplayer.getX(), seaplayer.getY());
 }
 
@@ -58,7 +58,8 @@ public Map(){
 		400+tmpx+(int)(10*Math.cos(seaplayer.returnTheta())), 400+tmpy+(int)(10*Math.sin(seaplayer.returnTheta())));
 	}
 	
-	public void update(){
+	//a lot of quirky code in this class
+	public boolean update(){
 		
 		Isle i=updateLanding();
 		if(i!=null){
@@ -70,6 +71,7 @@ public Map(){
 		}else
 			refresh();
 		
+		return i!=null;//returns true if onland 
 	}
 	
 	public void leaveIsland(){

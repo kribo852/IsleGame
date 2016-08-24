@@ -33,7 +33,8 @@ public static void main(String[] args){
 	long millispassed=System.currentTimeMillis();
 	
 	while(true){
-		map.update();
+		boolean onland=map.update();
+		DayCycleClass.update();
 		
 		drawbuffergraphics.drawImage(sea, 0, 0, null);
 		map.paint(drawbuffergraphics, screensize, screensize);
@@ -43,7 +44,10 @@ public static void main(String[] args){
 		g.drawImage(drawbuffer, 0, 0 , null);
 		
 		try {
-			Thread.sleep(Math.max(0, 75+millispassed-System.currentTimeMillis()));
+			if(onland)
+				Thread.sleep(Math.max(0, 75+millispassed-System.currentTimeMillis()));
+			else
+				Thread.sleep(Math.max(0, 25+millispassed-System.currentTimeMillis()));
 			millispassed=System.currentTimeMillis();
 		} catch(InterruptedException ex) {
 			Thread.currentThread().interrupt();

@@ -93,7 +93,7 @@ class LayeredDecorator extends LandObject{
 	
 class LandPlayer extends Humanoid{
 	Color c=new Color(100 , 100, 25);
-	PlayerInventory inventory=null;
+	//PlayerInventory inventory=null;
 	int savedkeypress=0;
 	
 	public LandPlayer(){
@@ -134,7 +134,7 @@ class LandPlayer extends Humanoid{
 	
 	public Inventory updateInventory(){
 		
-		return inventory.update();
+		return ((PlayerInventory)inventory).update();
 	}
 	
 	public void inventoryGive(Inventory other){
@@ -150,13 +150,13 @@ class LandPlayer extends Humanoid{
 	}
 	
 	public final boolean itemActive(Item item){
-		return inventory.returnActive()!=null && inventory.returnActive()==item;
+		return ((PlayerInventory)inventory).returnActive()!=null && ((PlayerInventory)inventory).returnActive()==item;
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
 		super.paint(g,x,y,tilesize);
 		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);	
-		inventory.paint(g);
+		((PlayerInventory)inventory).paint(g);
 	}
 	
 }
@@ -365,15 +365,15 @@ class FractalBush extends FractalTree{
 			
 			if(leaf){
 				if(addangle>0){
-					this.angle=Math.PI+depth*addangle;
+					this.angle=Math.PI+(depth+6.4)*addangle;
 				}else{
-					this.angle=2*Math.PI+depth*addangle;
+					this.angle=2*Math.PI+(depth+6.4)*addangle;
 				}
 			}else{
-				this.angle=3*Math.PI/2+depth*addangle;
+				this.angle=3*Math.PI/2+(depth+6.4)*addangle;
 			}
 			
-			if(depth>12 || leaf)
+			if(depth>10 || leaf)
 				return;
 				
 			if(depth>=1){
@@ -400,7 +400,7 @@ class FractalBush extends FractalTree{
 		if(trunk!=null){
 			for(int i=0; i<trunk.length; i++){
 				int xoffset=(int)(tilesize*branchpositions[i]);
-				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+3*tilesize/4, windangle/4);
+				trunk[i].paint(g,x*tilesize+xoffset,y*tilesize+3*tilesize/4, windangle/2);
 			}
 		}
 		super.barkColour=c;
@@ -412,8 +412,61 @@ class FractalBush extends FractalTree{
 }
 
 class Reed extends FractalBush{
+	static Color barkColour=new Color(200 ,175 , 100);
 	
+	public Reed(){
+		trunk=new Straw[24];
+		branchpositions=new double[trunk.length];
+		for(int i=0; i<trunk.length; i++){
+			branchpositions[i]=(new Random()).nextDouble();
+			trunk[i]=new Straw(0, 5 , Math.PI*(branchpositions[i]-0.5)/24);
+		}
+	}
 	
+	class Straw extends Branch{
+		
+		public Straw(int depth, double length, double addangle){
+			this.length=length;
+			this.angle=3*Math.PI/2+(depth+2)*addangle;
+			
+			if(depth>12)
+				return;	
+			
+				next=new Straw[1];
+				next[0]=new Straw(depth+1, length*0.95, addangle);
+			}
+	
+		public void paint(Graphics g, int x, int y, double windangle){paint((Graphics2D)g, x, y, 1, 0, windangle,0);}
+		
+		protected void paint(Graphics2D g, double x, double y, int broadness, int countleafcolour, final double windangle,double depth){
+			
+			if(next!=null){
+				g.setColor(barkColour);	
+			}else{
+				if(!treealive)return;
+				
+				g.setColor(leafcolour[countleafcolour]);
+				
+			}
+			g.setStroke(new BasicStroke(Math.max(1,broadness)));
+		
+			g.drawLine((int)x , (int)y,
+			(int)(length*Math.cos(angle+depth*windangle)+x),
+			(int)(length*Math.sin(angle+depth*windangle)+y));
+			
+			if(next!=null){
+				for(Branch branch: next){
+					countleafcolour++;
+					countleafcolour%=leafcolour.length;
+					branch.paint(g, length*Math.cos(angle+depth*windangle)+x , length*Math.sin(angle+depth*windangle)+y, broadness, countleafcolour, windangle,depth+1);
+				}
+			}
+		}
+	}
+	
+	public Inventory returnInventory(){
+		return new Inventory();
+	}
 }
 
 abstract class Humanoid extends LandObject{
@@ -471,6 +524,10 @@ abstract class Humanoid extends LandObject{
 	
 	public abstract Inventory updateInventory();//dropped items
 	
+	public boolean starving(){
+		return !inventory.updateTransformPossible();
+	}
+	
 	public final boolean getAction(){
 		boolean tmp=action;
 		action=false;
@@ -518,7 +575,7 @@ class TribesHumaniod extends Humanoid{
 	
 	public TribesHumaniod(){
 		super();
-		inventory=new Inventory();
+		inventory=InventoryFactory.createHumanoidInventory();
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
@@ -599,7 +656,7 @@ class FirePlace extends Building{
 	
 	public FirePlace(){
 		setSprites();
-		particles=new FireFlame[15];
+		particles=new FireFlame[50];
 		for(int i=0; i<particles.length; i++){
 			particles[i]=new FireFlame();
 			setFlamePosition(particles[i]);

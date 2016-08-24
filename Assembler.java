@@ -100,10 +100,22 @@ class BuildingAssembler extends Assembler{
 		return rtn;
 	}
 	
+	static BuildingRecipe createFireRecipe(){
+		BuildingRecipe rtn=new BuildingRecipe();
+		Inventory[][] recipeinventory=new Inventory[][]{{stone,log,stone},{log,log,log},{stone,log,stone}}; 
+		
+		rtn.recipeinventory=recipeinventory;
+		rtn.setBuilding(new FirePlace());
+		return rtn;
+	}
+	
 	//too bad that this manipulates map
 	public static void craft(LandObject[][] map, int x, int y){
 		
 		if(craftBuilding(map,x,y,createBoatRecipe()))
+			return;
+			
+		if(craftBuilding(map,x,y,createFireRecipe()))
 			return;
 	}
 	
@@ -116,6 +128,10 @@ class BuildingAssembler extends Assembler{
 					r.SubtractItems(map, x+i, y+j);
 					if(map[x][y]==null){//problematic if items dissapear
 						map[x][y]=r.getBuilding();
+						
+						if(r.getBuilding() instanceof FirePlace)
+							DayCycleClass.addLitPosition(x,y,6);
+						
 						System.out.println("crafting");
 						return true;
 					}

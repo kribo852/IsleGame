@@ -21,6 +21,8 @@ class Isle implements Runnable{
 	ArrayList<Humanoid> population;
 	SingletonTreeFactory singletontreefactory;
 	static Random RND=new Random();
+	static LandTexture daytextures=new LandTexture(40, true);//40 is the tilesize
+	static LandTexture nighttextures=new LandTexture(40, false);
 	
 		class Tuple<Type>{
 			public Type a,b;
@@ -160,20 +162,27 @@ class Isle implements Runnable{
 				
 				if(nowateraround){
 					layout[i][j]=LandType.grass;
-					if(objects[i][j]==null){
+					if(isEmpty(i,j)){
 						if(RND.nextDouble()<treeChance(i,j)){
 							objects[i][j]=singletontreefactory.getTree(true);		
 						}
-						else if(RND.nextInt(250)==0){
+						else if(RND.nextInt(2000)==0){
 							objects[i][j]=new FirePlace();
+							DayCycleClass.addLitPosition(i,j,6);
 						}
-						
 					}
 				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.sand){
 					if(RND.nextBoolean())
 						layout[i][j]=LandType.clay;
-					else
+					else{
 						layout[i][j]=LandType.grass;
+						if(RND.nextDouble()<treeChance(i,j)){
+							objects[i][j]=singletontreefactory.getTree(true);		
+						}
+					}
+					if(isEmpty(i,j) && RND.nextInt(4)==0){
+						objects[i][j]=new Reed();
+					}
 				}
 			}	
 		}
@@ -270,7 +279,24 @@ class Isle implements Runnable{
 		return (canSail(landplayer) && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
 	}
 	
-	public void updateHumanoids(final Collection<Humanoid> population){
+	public void updateHumanoids(final ArrayList<Humanoid> population){
+		
+		{
+		int markforremoval=-1;
+			for(int i=0; i<population.size(); i++){
+				if(population.get(i).starving()){
+					markforremoval=i;
+				}
+			}
+			if(markforremoval!=-1){
+				Inventory tmp=objects[population.get(markforremoval).getX()][population.get(markforremoval).getY()].returnInventory();
+				objects[population.get(markforremoval).getX()][population.get(markforremoval).getY()]=new InventoryHolder();
+				objects[population.get(markforremoval).getX()][population.get(markforremoval).getY()].inventoryGive(tmp);
+				population.remove(markforremoval);
+			}
+				
+		}	
+		
 		
 		for(Humanoid human: population){
 			int cposx=human.getX();
@@ -390,15 +416,18 @@ class Isle implements Runnable{
 				if(insideMapPos(i+landplayer.x,j+landplayer.y)){
 					LandType l=layout[i+landplayer.x][j+landplayer.y];
 					if(l!=LandType.water){
-						g.drawImage(LandTexture.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom square
+						
+						LandTexture tmp=(DayCycleClass.positionLit(i+landplayer.x,j+landplayer.y) ? daytextures: nighttextures);
+						
+						g.drawImage(tmp.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom square
 					}
 				}
 			}	
 		}
 		
 		//painting trees
-		for(int i=-numtiles; i<numtiles; i++){
-			for(int j=-numtiles; j<numtiles; j++){
+		for(int j=-numtiles; j<=numtiles; j++){
+			for(int i=-numtiles; i<numtiles; i++){
 				if(insideMapPos(i+landplayer.x,j+landplayer.y)){
 						
 					if(objects[i+landplayer.x][j+landplayer.y]!=null){
@@ -411,7 +440,7 @@ class Isle implements Runnable{
 							objects[i+landplayer.x][j+landplayer.y].paint((Graphics2D)g,i+numtiles,j+numtiles,scalex);
 						}
 					}
-				}
+				}	
 			}	
 		}
 		

@@ -2,9 +2,10 @@ import java.awt.Graphics;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.util.Random;
+import java.awt.Graphics2D;
 
 enum LandType{
-	grass(0, 100, 150 ,50),water(1, 25, 100, 150),sand(2 , 150 ,150 , 25),clay(3, 100,115,130);
+	grass(0, 100, 150 ,50),water(1, 25, 100, 150),sand(2 , 160 ,150 , 130),clay(3, 150,160,175);
 	
 	private int value, red, green, blue; 
 	private LandType(int value, int red, int green, int blue) {
@@ -26,11 +27,27 @@ enum LandType{
 
 class LandTexture{
 	
-	static BufferedImage[] grasstiles;
-	static BufferedImage[] sandtiles;
-	static BufferedImage claytile;
+	 BufferedImage[] grasstiles;
+	 BufferedImage[] sandtiles;
+	 BufferedImage claytile;
+	 
+	 public LandTexture(int size, boolean daytextures){
+		grasstiles=new BufferedImage[23];
+		sandtiles=new BufferedImage[7];
+		
+		for(int i=0; i<grasstiles.length; i++)
+			grasstiles[i]=makeGrassTexture(size, LandType.grass.getColour());
+			
+		for(int i=0; i<sandtiles.length; i++)
+			sandtiles[i]=makeNoisyTexture(size, LandType.sand.getColour());
+			
+			claytile=makeNoisyTexture(size, LandType.clay.getColour());
+			
+		if(!daytextures)
+				useAsNightTextures();
+	}
 	
-	private static BufferedImage makeSandTexture(int size, Color groundcolour){
+	private BufferedImage makeSandTexture(int size, Color groundcolour){
 		BufferedImage rtn=new BufferedImage(size,size,BufferedImage.TYPE_INT_ARGB);
 		
 		for(int i=0; i<size; i++){
@@ -49,7 +66,7 @@ class LandTexture{
 		return rtn;
 	}
 	
-	private static BufferedImage makeClayTexture(int size, Color groundcolour){
+	private BufferedImage makeClayTexture(int size, Color groundcolour){
 		BufferedImage rtn=new BufferedImage(size,size,BufferedImage.TYPE_INT_ARGB);
 		
 		for(int i=0; i<size; i++){
@@ -68,8 +85,27 @@ class LandTexture{
 		return rtn;
 	}
 	
+	private BufferedImage makeNoisyTexture(int size, Color groundcolour){
+		BufferedImage rtn=new BufferedImage(size,size,BufferedImage.TYPE_INT_ARGB);
+		
+		for(int i=0; i<size; i++){
+			for(int j=0; j<size; j++){
+				
+				double strength=0.9+(new Random()).nextDouble()*0.2;
+				Color c=groundcolour;
+				
+				int red=(int)(c.getRed()*strength);
+				int green=(int)(c.getGreen()*strength);
+				int blue=(int)(c.getBlue()*strength);
+				
+				rtn.setRGB(i,j,(new Color(red, green, blue)).getRGB());
+			}	
+		}
+		return rtn;
+	}
+	
 	//the double painting is done to prevent horizontal lines due to cuttof in grassstraw generations
-	private static BufferedImage makeGrassTexture(int size, Color groundcolour){
+	private BufferedImage makeGrassTexture(int size, Color groundcolour){
 		BufferedImage tmp=new BufferedImage(size,2*size,BufferedImage.TYPE_INT_ARGB);
 		
 		for(int i=0; i<size; i++){
@@ -101,20 +137,7 @@ class LandTexture{
 		return rtn;
 	}
 	
-	public static void initialize(int size){
-		grasstiles=new BufferedImage[23];
-		sandtiles=new BufferedImage[7];
-		
-		for(int i=0; i<grasstiles.length; i++)
-			grasstiles[i]=makeGrassTexture(size, LandType.grass.getColour());
-			
-		for(int i=0; i<sandtiles.length; i++)
-			sandtiles[i]=makeSandTexture(size, LandType.sand.getColour());
-			
-			claytile=makeClayTexture(size, LandType.clay.getColour());
-	}
-	
-	public static BufferedImage getbuffer(int x, int y, LandType l){
+	public BufferedImage getbuffer(int x, int y, LandType l){
 		
 		int seed=x+1+x*y;
 		
@@ -131,4 +154,21 @@ class LandTexture{
 		return null;
 	}
 	
+	public void useAsNightTextures(){
+		Color mask=new Color(50,50,50,100);
+		for(BufferedImage image: grasstiles){
+			
+			Graphics2D g=image.createGraphics();
+			g.setColor(mask);
+			g.fillRect(0,0,image.getWidth(), image.getHeight());
+		}
+		
+		for(BufferedImage image: sandtiles){
+			
+			Graphics2D g=image.createGraphics();
+			g.setColor(mask);
+			g.fillRect(0,0,image.getWidth(), image.getHeight());
+		}
+		
+	}
 }

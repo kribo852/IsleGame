@@ -16,15 +16,17 @@ class Inventory{
 	
 	EnumMap<Item,Integer> items;
 	protected static final int spritesize=32;
-	InventoryTransformer[] transformers;
+	ArrayList<InventoryTransformer> transformers;
 	
 	public Inventory(){
 		items=new EnumMap<Item,Integer>(Item.class);
+		transformers=new ArrayList<InventoryTransformer>();
 	}
 	
 	public Inventory(Item newitem, Integer amount){
 		items=new EnumMap<Item,Integer>(Item.class);
 		give(newitem , amount);
+		transformers=new ArrayList<InventoryTransformer>();
 	}
 	
 	public void give(Item newitem , int amount){
@@ -101,6 +103,32 @@ class Inventory{
 	public Inventory returnInventory(){
 		return this;
 	}
+	
+	public void addTransformer(InventoryTransformer transformer){
+		transformers.add(transformer);
+	}
+	
+	//should add outbound items
+	public boolean updateTransformPossible(){
+		
+		for(InventoryTransformer transformer : transformers){
+			
+			if(transformer.countdown())return true;
+			
+			
+			if(items.containsKey(transformer.getInbound())){
+				Integer amount=items.get(transformer.getInbound());
+				
+				if(amount>1){
+					items.put(transformer.getInbound(), amount-1);
+					return true;
+				}else{
+					items.remove(transformer.getInbound());
+				}
+			}	
+		}	
+		return false;
+	}
 }
 
 class PlayerInventory extends Inventory{
@@ -176,7 +204,7 @@ class PlayerInventory extends Inventory{
 //humaniods might consume food for survival.
 class InventoryTransformer{
 	Item inbound=null, outbound=null;
-	static final int rate=1000;
+	static final int rate=350;
 	int timer=rate;
 	
 	public InventoryTransformer(Item inbound, Item outbound){
@@ -184,7 +212,7 @@ class InventoryTransformer{
 		this.outbound=outbound;
 	}
 	
-	public boolean transform(){
+	public boolean countdown(){
 		if(--timer<0){
 			timer=rate;
 			return false;
@@ -242,9 +270,16 @@ class InventoryFactory{
 		rtn.give(Item.plantfiber , 1+(new Random()).nextInt(2));
 		rtn.give(Item.stick , 1+(new Random()).nextInt(2));
 		rtn.give(Item.berries , 5+(new Random()).nextInt(5));
+		rtn.addTransformer(new InventoryTransformer(Item.berries, null));//transformer could be static
 		return rtn;
 	}
 	
-	
-	
+	public static Inventory createHumanoidInventory(){
+		
+		Inventory rtn=new Inventory();
+		rtn.give(Item.berries , 10+(new Random()).nextInt(5));
+		rtn.addTransformer(new InventoryTransformer(Item.berries, null));//transformer could be static
+		return rtn;
+	}
+
 }

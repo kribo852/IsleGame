@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.lang.Runnable;
 import java.util.Random;
+import java.util.HashSet;
 import java.awt.Graphics2D;
 import java.awt.BasicStroke;
 
@@ -12,8 +13,8 @@ abstract class Particle{
 	static public void initializeBuffer(BufferedImage image,  Color particlecolour, double strength){
 		for(int i=0; i<image.getWidth(); i++){
 			for(int j=0; j<image.getHeight(); j++){
-				double distance=strength*Math.sqrt(Math.pow(image.getWidth()/2-i-0.5,2)+Math.pow(image.getWidth()/2-j-0.5,2));
-				int alpha=(int)(200*Math.exp(-distance));
+				double distance=strength*(Math.pow(image.getWidth()/2-i-0.5,2)+Math.pow(image.getWidth()/2-j-0.5,2));
+				int alpha=(int)(75*Math.exp(-distance));
 				Color c=new Color(particlecolour.getRGB());
 				c=new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
 				image.setRGB(i,j, c.getRGB());
@@ -31,14 +32,14 @@ class Raindrop extends Particle{
 			return;
 		
 		image=new BufferedImage(16,16, BufferedImage.TYPE_INT_ARGB);
-		initializeBuffer(image,raincoloured,0.32);
+		initializeBuffer(image,raincoloured,0.05);
 	}
 	
 }
 
 class FireFlame extends Particle{
 	static BufferedImage image=null;
-	static final Color firecoloured=new Color(250,200,150);
+	static final Color firecoloured=new Color(250,175,0);
 	
 	double sineangle;
 	int lifetime;
@@ -56,7 +57,7 @@ class FireFlame extends Particle{
 			return;
 		
 		image=new BufferedImage(16,16, BufferedImage.TYPE_INT_ARGB);
-		initializeBuffer(image,firecoloured,0.2);
+		initializeBuffer(image,firecoloured,0.05);
 	}
 	
 	public boolean update(){
@@ -77,7 +78,7 @@ class FireFlame extends Particle{
 }
 
 class Rainfall implements Runnable{
-	boolean active=true;
+	static boolean active=true;
 	int timer=500;
 	BufferedImage rainbuffer[]=new BufferedImage[2];
 	Raindrop[] rain;
@@ -89,7 +90,7 @@ class Rainfall implements Runnable{
 	
 	
 	public Rainfall(){
-		rain=new Raindrop[250];
+		rain=new Raindrop[500];
 	
 		for(int i=0; i<rain.length; i++){
 			rain[i]=new Raindrop();
@@ -128,7 +129,7 @@ class Rainfall implements Runnable{
 					paintLightning(g , 200+RND.nextInt(400), -10 , 200, lighcol , 0); 
 					
 				}else{
-					((Graphics2D)g).setBackground(new Color(25, 50, 50, 80));
+					((Graphics2D)g).setBackground(new Color(25, 50, 50, 120));
 					g.clearRect(0,0,800, 800);
 				}
 			}else{
@@ -149,8 +150,10 @@ class Rainfall implements Runnable{
 				
 				active=!active;	
 			}
-			
-				
+	}
+	
+	public static boolean isActive(){
+		return active;
 	}
 	
 	public void paint(Graphics g , int screenwidth, int screenheight){
@@ -180,4 +183,46 @@ class Rainfall implements Runnable{
 	public static double getWindAngle(){
 		return windangle;
 	}
+}
+
+class DayCycleClass{
+	
+	static double hour=0;
+	static double speed=Math.PI/500;
+	static HashSet<Integer> litpositions=new HashSet<Integer>();
+	
+	static public void addLitPosition(int posx , int posy, int radius){
+		
+		
+		for(int i=-radius; i<radius; i++)
+			if(i+posx>=0)
+			for(int j=-radius; j<radius; j++){
+				if(j+posy>=0)
+					if(i*i+j*j<radius*radius){
+						Integer repr=((posx+i)<<16)+posy+j;
+						litpositions.add(repr);
+					}
+			}
+	}
+	
+	static public void clear(){
+		litpositions=new HashSet<Integer>();
+	}
+	
+	//null if lit
+	static public boolean positionLit(int posx , int posy){
+
+		Integer repr=(posx<<16)+posy;
+		
+		if(litpositions.contains(repr)){
+			return true;
+		} 
+		return hour>Math.PI;
+	}
+	
+	static void update(){
+		hour+=speed;
+		hour%=(2*Math.PI);
+	}
+	
 }
