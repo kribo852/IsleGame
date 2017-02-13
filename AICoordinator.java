@@ -28,7 +28,7 @@ int[] update(final LandObject[][] map){
 		searchForUnits(map);
 	}else{
 		if(savedmove!=null)
-			if(map[savedmove[2]][savedmove[3]]!=null && map[savedmove[2]][savedmove[3]].getClass()==TribesHumaniod.class){
+			if(map[savedmove[2]][savedmove[3]]!=null && map[savedmove[2]][savedmove[3]].getClass()==TribesHumanoid.class){
 				AIpositions.remove(transform(savedmove[0],savedmove[1]));
 				AIpositions.add(transform(savedmove[2],savedmove[3]));
 			}
@@ -62,7 +62,7 @@ private void searchForUnits(final LandObject[][] map){
 	for(int i=0; i<map.length; i++){
 		for(int j=0; j<map[i].length; j++){
 			if(map[i][j]!=null)
-				if(map[i][j].getClass()==TribesHumaniod.class){
+				if(map[i][j].getClass()==TribesHumanoid.class){
 					AIpositions.add(transform(i,j));
 			}
 		}

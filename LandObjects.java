@@ -465,7 +465,7 @@ class Reed extends FractalBush{
 	}
 	
 	public Inventory returnInventory(){
-		return new Inventory();
+		return InventoryFactory.createReedInventory();
 	}
 }
 
@@ -567,54 +567,7 @@ abstract class Humanoid extends LandObject{
 	
 	public boolean itemActive(Item item){
 		return inventory.contains(item);
-	}
-	
-}
-
-class TribesHumaniod extends Humanoid{
-	
-	public TribesHumaniod(){
-		super();
-		inventory=InventoryFactory.createHumanoidInventory();
-	}
-	
-	public void paint(Graphics g, int x, int y, int tilesize){
-			super.paint(g,x,y,tilesize);
-			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
-			//System.out.println("#############");
-	}
-	
-	public Inventory updateInventory(){return null;}
-	
-	public void wantedMove(Isle island){
-		if((new Random()).nextInt(5)!=0)
-			return;
-		
-		ArrayList<int[]>possiblemoves=new ArrayList<int[]>();
-		
-		for(int i=-1; i<2; i++){
-			for(int j=-1; j<2; j++){
-				if(island.insideMapPos(i+x,  j+y)){
-					if(!island.isEmpty(i+x,  j+y) && island.isBush(i+x,  j+y)){
-						placex=i;
-						placey=j;
-						action=true;
-						return;
-					}
-					
-					if(island.validMovePosition(i+x,  j+y)){
-						possiblemoves.add(new int[]{i+x,j+y});
-					}
-				}
-			}
-		}
-		
-		if(!possiblemoves.isEmpty()){
-			int[] tmp=possiblemoves.get((new Random()).nextInt(possiblemoves.size()));
-			x=tmp[0];
-			y=tmp[1];
-		}
-	}
+	}	
 }
 
 abstract class Building extends LandObject{
@@ -636,6 +589,34 @@ class Boat extends Building{
 	
 			try{
 				sprites[0]=ImageIO.read(new File("Boat.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
+				
+			}catch(IOException e){
+		
+			}
+		}
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+	}
+	
+}
+
+class House extends Building{
+	static BufferedImage[] sprites=null;
+	
+	public House(){
+		setSprites();
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		if(sprites==null){
+			sprites=new BufferedImage[1];
+	
+			try{
+				sprites[0]=ImageIO.read(new File("House.png"));
 				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
 				
 			}catch(IOException e){
@@ -694,6 +675,79 @@ class FirePlace extends Building{
 			g.drawImage(FireFlame.image, x*tilesize+(int)fireflame.getX(),  y*tilesize+(int)fireflame.getY(), null);		
 		}
 	}
+}
+
+class Torch extends FirePlace{
+	static BufferedImage[] sprites=null;
+		
+	public Torch(){
+		setSprites();
+		particles=new FireFlame[20];
+		for(int i=0; i<particles.length; i++){
+			particles[i]=new FireFlame();
+			setFlamePosition(particles[i]);
+		}
+	}
+	
+	private void setFlamePosition(FireFlame fireflame){
+		fireflame.x=(new Random()).nextInt(8);
+		fireflame.y=2;
+		fireflame.lifetime=3+(new Random()).nextInt(15);
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		if(sprites==null){
+			sprites=new BufferedImage[1];
+	
+			try{
+				sprites[0]=ImageIO.read(new File("Torch.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
+				
+			}catch(IOException e){
+		
+			}
+		}
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+		
+		for(FireFlame fireflame: particles){
+			if(fireflame.update()){
+				setFlamePosition(fireflame);
+			}
+			g.drawImage(FireFlame.image, x*tilesize+(int)fireflame.getX(),  y*tilesize+(int)fireflame.getY(), null);		
+		}
+	}
+}
+
+class Palisade extends Building{
+	static BufferedImage[] sprites=null;
+	
+	public Palisade(){
+		setSprites();
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		if(sprites==null){
+			sprites=new BufferedImage[1];
+	
+			try{
+				sprites[0]=ImageIO.read(new File("Palisade.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
+				
+			}catch(IOException e){
+		
+			}
+		}
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
+	}
+	
 }
 
 class SingletonTreeFactory{

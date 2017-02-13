@@ -1,3 +1,10 @@
+import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+//import java.lang.ReflectiveOperationException.InvocationTargetException;
 
 abstract class Assembler{
 	
@@ -6,12 +13,11 @@ abstract class Assembler{
 	static final Inventory stick=new Inventory(Item.stick     ,1);
 	static final Inventory rop=new Inventory(Item.rope     ,1);
 	static final Inventory log=new Inventory(Item.log     ,1);
+	static final Inventory reed=new Inventory(Item.reed     ,1);
 	
 	static class Recipe{
 		
-		public Recipe(){
-		
-		}
+		public Recipe(){}
 		
 		Inventory[][] recipeinventory;
 		
@@ -39,7 +45,6 @@ abstract class Assembler{
 					}
 				}
 			}
-			
 			return true;
 		}
 		
@@ -70,10 +75,19 @@ abstract class Assembler{
 		
 		public int getWidth(){return recipeinventory.length;}
 		public int getHeight(){return recipeinventory[0].length;}
+		
+		public void paint(int yoffset, int imagesize,  Graphics g){
+			
+			for(int i=0; i<recipeinventory.length; i++)for(int j=0; j<recipeinventory[i].length; j++){
+				if(recipeinventory[i][j]!=null)
+					g.drawImage(recipeinventory[i][j].getSprite() , i*imagesize, yoffset+j*imagesize , null);
+			}		
+		}
 	}
 	
 	
 	public static void craft(LandObject[][] map, int x, int y){};
+	
 }
 
 // a class that transforms items in crafting formations on the ground
@@ -109,14 +123,52 @@ class BuildingAssembler extends Assembler{
 		return rtn;
 	}
 	
+	static BuildingRecipe createHouse1Recipe(){
+		BuildingRecipe rtn=new BuildingRecipe();
+		Inventory[][] recipeinventory=new Inventory[][]{{reed,stick,log},{reed,stick,stick},{reed,stick,log}}; 
+		
+		rtn.recipeinventory=recipeinventory;
+		rtn.setBuilding(new House());
+		return rtn;
+	}
+	
+	static BuildingRecipe createHouse2Recipe(){
+		BuildingRecipe rtn=new BuildingRecipe();
+		Inventory[][] recipeinventory=new Inventory[][]{{null,stick,stick,log},{stick,stick,stick,log},{null,stick,stick,log}}; 
+		
+		rtn.recipeinventory=recipeinventory;
+		rtn.setBuilding(new House());
+		return rtn;
+	}
+	
+	static BuildingRecipe createTorchRecipe(){
+		BuildingRecipe rtn=new BuildingRecipe();
+		Inventory[][] recipeinventory=new Inventory[][]{{pfib,null,null},{pfib,stick,stick},{pfib,null,null}}; 
+		
+		rtn.recipeinventory=recipeinventory;
+		rtn.setBuilding(new Torch());
+		return rtn;
+	}
+	
+	static BuildingRecipe createPalisadeRecipe(){
+		BuildingRecipe rtn=new BuildingRecipe();
+		Inventory[][] recipeinventory=new Inventory[][]{{stick,null,stick},{null,stick,null},{stick,null,stick}}; 
+		
+		rtn.recipeinventory=recipeinventory;
+		rtn.setBuilding(new Palisade());
+		return rtn;
+	}
+	
 	//too bad that this manipulates map
 	public static void craft(LandObject[][] map, int x, int y){
-		
-		if(craftBuilding(map,x,y,createBoatRecipe()))
-			return;
-			
-		if(craftBuilding(map,x,y,createFireRecipe()))
-			return;
+		for(Method m:BuildingAssembler.class.getDeclaredMethods())
+			if(m.getReturnType() == BuildingRecipe.class){
+				try{
+					Object o=m.invoke(null,new Object[0]);
+					if(craftBuilding(map,x,y,((BuildingRecipe)o)))return;
+				}catch(IllegalAccessException iae){
+				}catch(InvocationTargetException ite){}
+			}
 	}
 	
 	//this is in common between the Assemblers
@@ -129,8 +181,11 @@ class BuildingAssembler extends Assembler{
 					if(map[x][y]==null){//problematic if items dissapear
 						map[x][y]=r.getBuilding();
 						
-						if(r.getBuilding() instanceof FirePlace)
+						if(r.getBuilding() instanceof Torch)
 							DayCycleClass.addLitPosition(x,y,6);
+							
+						else if(r.getBuilding() instanceof FirePlace)
+							DayCycleClass.addLitPosition(x,y,10);
 						
 						System.out.println("crafting");
 						return true;
@@ -193,14 +248,14 @@ class ItemAssembler extends Assembler{
 	//too bad that this manipulates map
 	public static void craft(LandObject[][] map, int x, int y){
 		
-		if(craftItem(map,x,y,createStoneAxeRecipe()))
-			return;
-			
-		if(craftItem(map,x,y,createRopeRecipe()))
-			return;
-			
-		if(craftItem(map,x,y,createFishnetRecipe()))
-			return;
+		for(Method m:ItemAssembler.class.getDeclaredMethods())
+			if(m.getReturnType() == ItemRecipe.class){
+				try{
+					Object o=m.invoke(null,new Object[0]);
+					if(craftItem(map,x,y,((ItemRecipe)o)))return;
+				}catch(IllegalAccessException iae){
+				}catch(InvocationTargetException ite){}
+			}
 	}
 	
 	private static boolean craftItem(LandObject[][] map, int x, int y, ItemRecipe r){
@@ -221,4 +276,89 @@ class ItemAssembler extends Assembler{
 		}
 		return false;
 	}
+}
+
+//These can be shown at any time, sea or land, should use metaprogramming to 
+class ShowCrafteables{
+	
+	Assembler items;
+	Assembler buildings;
+	static Graphics graphics;
+	ArrayList<Method> recipemethods;
+	
+	
+	public ShowCrafteables(){
+		items=new ItemAssembler();
+		buildings=new BuildingAssembler();
+		recipemethods=new ArrayList<Method>();
+		
+		for(Method m:ItemAssembler.class.getDeclaredMethods()){
+			if(m.getReturnType() == ItemAssembler.ItemRecipe.class){
+				recipemethods.add(m);
+			}
+		}
+		
+		for(Method m:BuildingAssembler.class.getDeclaredMethods()){
+			if(m.getReturnType() == BuildingAssembler.BuildingRecipe.class){
+				recipemethods.add(m);
+			}
+		}
+		
+	}
+	
+	public void main(){
+		
+		if(KeyBoard.returnKeyPress()!=KeyEvent.VK_ENTER)
+			return;
+			
+			
+			int placearray=0;
+		while(true){
+			
+			if(KeyBoard.returnKeyPress()==KeyEvent.VK_ESCAPE)
+				break;
+			
+			if(KeyBoard.returnKeyPress()==KeyEvent.VK_LEFT){
+				placearray--;
+				if(placearray<0)placearray=0;
+			}
+			
+			if(KeyBoard.returnKeyPress()==KeyEvent.VK_RIGHT){
+				placearray++;
+				if(placearray>=recipemethods.size())placearray=recipemethods.size()-1;
+			}
+			
+			Method m=recipemethods.get(placearray);
+			
+			
+			paint(m);
+			try {
+				Thread.sleep(Math.max(0, 75));
+			} catch(InterruptedException ex) {
+			
+			}
+		}
+		
+	}
+	
+	public static void setGrapihcs(Graphics g){
+		graphics=g;
+	}
+	
+	
+	public void paint(Method m){
+		
+		graphics.setColor(new Color(50,75,35));
+		graphics.fillRect(0,0,400,400);
+		try{
+			Object o=m.invoke(null,new Object[0]);
+			((Assembler.Recipe)o).paint(25,32,graphics);
+		}catch(IllegalAccessException iae){
+			System.err.println("THATSBAD (ASSEMBLER FILE)");
+		}catch(InvocationTargetException ite){
+			System.err.println("THATSBAD  (ASSEMBLER FILE)");
+		}
+		
+	}
+	
 }

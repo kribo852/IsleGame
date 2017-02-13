@@ -60,7 +60,6 @@ public Map(){
 	
 	//a lot of quirky code in this class
 	public boolean update(){
-		
 		Isle i=updateLanding();
 		if(i!=null){
 			if(i.updateLand()){

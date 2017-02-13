@@ -32,7 +32,12 @@ public static void main(String[] args){
 	
 	long millispassed=System.currentTimeMillis();
 	
+	//
+	ShowCrafteables.setGrapihcs(g);
+	
 	while(true){
+		(new ShowCrafteables()).main();
+		
 		boolean onland=map.update();
 		DayCycleClass.update();
 		

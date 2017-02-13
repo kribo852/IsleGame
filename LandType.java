@@ -155,7 +155,7 @@ class LandTexture{
 	}
 	
 	public void useAsNightTextures(){
-		Color mask=new Color(50,50,50,100);
+		Color mask=new Color(25,35,50,120);
 		for(BufferedImage image: grasstiles){
 			
 			Graphics2D g=image.createGraphics();
@@ -169,6 +169,8 @@ class LandTexture{
 			g.setColor(mask);
 			g.fillRect(0,0,image.getWidth(), image.getHeight());
 		}
-		
+		Graphics2D g=claytile.createGraphics();
+		g.setColor(mask);
+		g.fillRect(0,0,claytile.getWidth(), claytile.getHeight());
 	}
 }

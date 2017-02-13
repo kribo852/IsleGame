@@ -267,18 +267,24 @@ class InventoryFactory{
 	public static PlayerInventory createPlayerInventory(){
 		
 		PlayerInventory rtn=new PlayerInventory();
-		rtn.give(Item.plantfiber , 1+(new Random()).nextInt(2));
-		rtn.give(Item.stick , 1+(new Random()).nextInt(2));
+		rtn.give(Item.plantfiber , (new Random()).nextInt(2));
+		rtn.give(Item.stick , (new Random()).nextInt(2));
 		rtn.give(Item.berries , 5+(new Random()).nextInt(5));
+		rtn.give(Item.stone , 5);
 		rtn.addTransformer(new InventoryTransformer(Item.berries, null));//transformer could be static
 		return rtn;
 	}
 	
-	public static Inventory createHumanoidInventory(){
-		
+	public static Inventory createHumanoidInventory(){	
 		Inventory rtn=new Inventory();
-		rtn.give(Item.berries , 10+(new Random()).nextInt(5));
+		rtn.give(Item.berries , 10+(new Random()).nextInt(10));
 		rtn.addTransformer(new InventoryTransformer(Item.berries, null));//transformer could be static
+		return rtn;
+	}
+	
+	public static Inventory createReedInventory(){	
+		Inventory rtn=new Inventory();
+		rtn.give(Item.reed , 9+(new Random()).nextInt(3));
 		return rtn;
 	}
 

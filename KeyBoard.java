@@ -8,6 +8,8 @@ final class KeyBoard implements KeyListener{
 		private static double deltatheta=0;
 		
 		private static int savedkeypress=-1;
+		
+		private static int savedkeytyped=-1;
 	
 	public void keyPressed(KeyEvent e){
 		
@@ -37,9 +39,14 @@ final class KeyBoard implements KeyListener{
 		
 	}
 	
-	public void keyTyped(KeyEvent e){}
+	public void keyTyped(KeyEvent e){
+		savedkeytyped=e.getKeyCode();
+	}
+	
+	
 	public static double returnSpeed() {return (1.0-deltaspeed);} 
 	public static double returnTheta() {return deltatheta;} 
 	
-	public static int returnKeyPress() {return savedkeypress;} 
+	public static int returnKeyPress() {return savedkeypress;}
+	public static int returnKeyTyped() {return savedkeytyped;} 
 }

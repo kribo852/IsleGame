@@ -188,7 +188,7 @@ class Rainfall implements Runnable{
 class DayCycleClass{
 	
 	static double hour=0;
-	static double speed=Math.PI/500;
+	static double speed=Math.PI/1500;
 	static HashSet<Integer> litpositions=new HashSet<Integer>();
 	
 	static public void addLitPosition(int posx , int posy, int radius){
@@ -217,7 +217,7 @@ class DayCycleClass{
 		if(litpositions.contains(repr)){
 			return true;
 		} 
-		return hour>Math.PI;
+		return hour<3*Math.PI/2;
 	}
 	
 	static void update(){

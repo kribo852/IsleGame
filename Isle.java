@@ -196,7 +196,7 @@ class Isle implements Runnable{
 						objects[i][j].inventoryGive(InventoryFactory.createGroundInventory());
 					
 					}else if(RND.nextInt(1000)==0){
-						Humanoid h=new TribesHumaniod();
+						Humanoid h=new TribesHumanoid();
 						objects[i][j]=h;
 						h.setX(i);
 						h.setY(j);
@@ -386,6 +386,11 @@ class Isle implements Runnable{
 		return (objects[x][y] instanceof Building);
 	}
 	
+	boolean isItem(int x, int y){
+		if(isEmpty(x,y))return false;//null is not a bush
+		return (objects[x][y] instanceof InventoryHolder);
+	}
+	
 	boolean canSail(LandPlayer h){
 		
 		for(int i=-1; i<2; i++){
@@ -498,4 +503,16 @@ class Isle implements Runnable{
 	}
 	
 	public double treeChance(int x, int y){return Math.min(0.5, 1-Math.exp(-0.036*distance_to_sea[x][y]));}
+	
+	//
+	public boolean otherPersonClose(int x, int y, int selfx, int selfy, double radius){
+		
+		for(int i=(int)-radius; i<=radius; i++)for(int j=(int)-radius; j<=radius; j++){
+			if( !(i+x==selfx && j+y==selfy) && insideMapPos(i+x, j+y) && isHumanoid(i+x, j+y) && Math.hypot(i, j)<radius){
+				return true;
+			}
+		}
+		
+		return false;
+	}
 }

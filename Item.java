@@ -19,7 +19,8 @@ enum Item{
 		stone(7),
 		stoneaxe(8),
 		rope(9),
-		fishnet(10);
+		fishnet(10),
+		reed(11);
 	
 		private BufferedImage image;
 		private int value;
@@ -50,7 +51,10 @@ enum Item{
 		}
 		if(value==10){
 			intitialize_fishnet();
-		}	
+		}if(value==11){
+			intitialize_reed();
+		}
+		
 	}
 	
 	public void intitialize_image(String spritename){
@@ -153,6 +157,21 @@ enum Item{
 		g2d.setColor(new Color(200,175,150));
 		g2d.fillOval(20,8,8,16);
 		
+	}
+	
+	private void intitialize_reed(){
+		
+		image=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB); 
+		Graphics2D g2d=image.createGraphics();
+		g2d.setColor(new Color(255,0,255,0));
+		g2d.fillRect(0,0,image.getWidth(), image.getHeight());
+		
+		for(int i=0; i<16; i++){
+			g2d.setColor(new Color(50,125,25));
+			g2d.drawLine(i*image.getWidth()/16 , 4 , i*image.getWidth()/16  , 8);
+			g2d.setColor(new Color(150,125,25));
+			g2d.drawLine(i*image.getWidth()/16 , 8 , i*image.getWidth()/16  , image.getHeight());
+		}
 	}
 	
 	public BufferedImage getImage(){
