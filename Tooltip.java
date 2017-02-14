@@ -23,6 +23,7 @@ class Tooltip{
 		g.setFont(new Font("TimesRoman", Font.BOLD, 16)); 
 		g.drawString("I must help my people to survive.", 200, 200);
 		g.drawString("If I a can build a boat, I can sail to other islands" , 200, 220);
+		g.drawString("use Enter, Escape and arrows to toggle recipes" , 200, 240);
 		g.setFont(new Font("TimesRoman", Font.PLAIN, 10)); 
 
 	}
