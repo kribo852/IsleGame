@@ -635,13 +635,20 @@ class FirePlace extends Building{
 	static BufferedImage[] sprites=null;
 	FireFlame[] particles;
 	
-	public FirePlace(){
+	public FirePlace(){setSprites();}
+	
+	public FirePlace(int x, int y){
+		this(x, y, 10);
 		setSprites();
 		particles=new FireFlame[50];
 		for(int i=0; i<particles.length; i++){
 			particles[i]=new FireFlame();
 			setFlamePosition(particles[i]);
 		}
+	}
+	
+	protected FirePlace(int x, int y, int litradius){
+		DayCycleClass.addLitPosition(x, y, litradius);
 	}
 	
 	private void setFlamePosition(FireFlame fireflame){
@@ -679,8 +686,11 @@ class FirePlace extends Building{
 
 class Torch extends FirePlace{
 	static BufferedImage[] sprites=null;
+	
+	public Torch(){setSprites();}
 		
-	public Torch(){
+	public Torch(int x, int y){
+		super(x,y,6);
 		setSprites();
 		particles=new FireFlame[20];
 		for(int i=0; i<particles.length; i++){

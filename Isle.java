@@ -23,6 +23,7 @@ class Isle implements Runnable{
 	static Random RND=new Random();
 	static LandTexture daytextures=new LandTexture(40, true);//40 is the tilesize
 	static LandTexture nighttextures=new LandTexture(40, false);
+	Growth growth=null;
 	
 		class Tuple<Type>{
 			public Type a,b;
@@ -38,6 +39,7 @@ class Isle implements Runnable{
 			this.seedy=seedy;
 			this.islesize=islesize;
 			landplayer=null;
+			growth=new Growth();
 	}
 
 	//generates island in new thread
@@ -138,6 +140,7 @@ class Isle implements Runnable{
 		singletontreefactory=new SingletonTreeFactory();
 		
 		distance_to_sea=calculateSeaDistance(layout);
+		growth.setDistance(distance_to_sea);
 		
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
@@ -163,12 +166,11 @@ class Isle implements Runnable{
 				if(nowateraround){
 					layout[i][j]=LandType.grass;
 					if(isEmpty(i,j)){
-						if(RND.nextDouble()<treeChance(i,j)){
+						if(RND.nextDouble()<growth.treeChance(i,j)){
 							objects[i][j]=singletontreefactory.getTree(true);		
 						}
 						else if(RND.nextInt(2000)==0){
-							objects[i][j]=new FirePlace();
-							DayCycleClass.addLitPosition(i,j,6);
+							objects[i][j]=new FirePlace(i,j);
 						}
 					}
 				}else if(distance_to_sea[i][j]>1 && layout[i][j]==LandType.sand){
@@ -176,7 +178,7 @@ class Isle implements Runnable{
 						layout[i][j]=LandType.clay;
 					else{
 						layout[i][j]=LandType.grass;
-						if(RND.nextDouble()<treeChance(i,j)){
+						if(RND.nextDouble()<growth.treeChance(i,j)){
 							objects[i][j]=singletontreefactory.getTree(true);		
 						}
 					}
@@ -221,37 +223,24 @@ class Isle implements Runnable{
 	
 	public boolean updateLand(){
 		
-		{	
-			int treex=RND.nextInt(layout.length);
-			int treey=RND.nextInt(layout[0].length);
-			if(RND.nextInt(3)==0){
-				if(objects[treex][treey]!=null && isTree(treex, treey)){
-					objects[treex][treey]=singletontreefactory.getDeadTreeOfType(objects[treex][treey].getClass());
-				}
-			}else{
-				if(layout[treex][treey]==LandType.grass && isEmpty(treex, treey)){
-					double sumtrees=0, activesquares=0;
-					ArrayList<Class> livingtrees=new ArrayList<Class>();
-					
-					for(int i=-2; i<3; i++){
-						for(int j=-2; j<3; j++){
-							if(insideMapPos(treex+i, treey+j) && !isEmpty(treex+i,treey+j)){
-								++activesquares;
-								if(isTree(treex+i, treey+j)){
-									++sumtrees;
-									if(((FractalTree)objects[treex+i][treey+j]).isAlive()){
-										livingtrees.add(objects[treex+i][treey+j].getClass());
-									}
-								}
-							}
-						}
-					}
-					if(!livingtrees.isEmpty() && sumtrees/activesquares<treeChance(treex, treey)){
-						objects[treex][treey]=singletontreefactory.getLiveTreeOfType(livingtrees.get(RND.nextInt(livingtrees.size())));
-					}
-				}
+		growth.setDistance(distance_to_sea);
+		
+		for(short[] s:growth.getGrowPos()){
+			if(layout[s[0]][s[1]]==LandType.grass && isEmpty(s[0],s[1])){
+				ArrayList<Class> livingtrees=findSeedTrees(s[0],s[1]);
+				if(!livingtrees.isEmpty())
+					objects[s[0]][s[1]]=singletontreefactory.getLiveTreeOfType(livingtrees.get(RND.nextInt(livingtrees.size())));
 			}
 		}
+		
+		for(short[] s:growth.getDiePos()){
+			if(isTree(s[0],s[1])){
+				objects[s[0]][s[1]]=singletontreefactory.getDeadTreeOfType(objects[s[0]][s[1]].getClass());
+			}
+		}
+		
+		Thread t=new Thread(growth);
+		t.start();
 		
 		updateHumanoids(population);
 		{
@@ -277,6 +266,24 @@ class Isle implements Runnable{
 		}
 		
 		return (canSail(landplayer) && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
+	}
+	
+	public ArrayList<Class> findSeedTrees(int treex, int treey){
+		double sumtrees=0, activesquares=0;
+		ArrayList<Class> livingtrees=new ArrayList<Class>();
+		
+		for(int i=-2; i<3; i++)for(int j=-2; j<3; j++){
+			if(insideMapPos(treex+i, treey+j) && !isEmpty(treex+i,treey+j)){
+				++activesquares;
+				if(isTree(treex+i, treey+j)){
+					++sumtrees;
+					if(((FractalTree)objects[treex+i][treey+j]).isAlive()){
+						livingtrees.add(objects[treex+i][treey+j].getClass());
+					}
+				}
+			}
+		}
+		return livingtrees;			
 	}
 	
 	public void updateHumanoids(final ArrayList<Humanoid> population){
@@ -333,10 +340,11 @@ class Isle implements Runnable{
 					human.setY(cposy);
 				}
 				
-			//the full treecutting is still to be implemented
+			//treecutting
 			if(human.getAction()){
 				if(insideMapPos(human.getPlaceX(), human.getPlaceY())){
 					if(objects[human.getPlaceX()][human.getPlaceY()]!=null){
+						
 						if(isBush(human.getPlaceX(),human.getPlaceY())){
 							Inventory dropped=objects[human.getPlaceX()][human.getPlaceY()].returnInventory();
 								objects[human.getPlaceX()][human.getPlaceY()]=new InventoryHolder();
@@ -347,6 +355,10 @@ class Isle implements Runnable{
 								objects[human.getPlaceX()][human.getPlaceY()]=new InventoryHolder();
 								objects[human.getPlaceX()][human.getPlaceY()].inventoryGive(dropped);
 						}
+					}//fishing
+					if(distance_to_sea[human.getPlaceX()][human.getPlaceY()]==0 && human.itemActive(Item.fishnet)){
+						if(RND.nextInt(40)==0)human.inventoryGive(new Inventory(Item.fish,1));
+						
 					}
 				}
 			}	
@@ -377,12 +389,12 @@ class Isle implements Runnable{
 	}
 	
 	boolean isHumanoid(int x, int y){
-		if(isEmpty(x,y))return false;//null is not a bush
+		if(isEmpty(x,y))return false;
 		return (objects[x][y] instanceof Humanoid);
 	}
 	
 	boolean isBuilding(int x, int y){
-		if(isEmpty(x,y))return false;//null is not a bush
+		if(isEmpty(x,y))return false;
 		return (objects[x][y] instanceof Building);
 	}
 	
@@ -424,7 +436,7 @@ class Isle implements Runnable{
 						
 						LandTexture tmp=(DayCycleClass.positionLit(i+landplayer.x,j+landplayer.y) ? daytextures: nighttextures);
 						
-						g.drawImage(tmp.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom square
+						g.drawImage(tmp.getbuffer(i+landplayer.x,j+landplayer.y,l),(numtiles+i)*scalex,(numtiles+j)*scaley,null);//returns a semirandom texture
 					}
 				}
 			}	
@@ -502,9 +514,6 @@ class Isle implements Runnable{
 		return rtn;
 	}
 	
-	public double treeChance(int x, int y){return Math.min(0.5, 1-Math.exp(-0.036*distance_to_sea[x][y]));}
-	
-	//
 	public boolean otherPersonClose(int x, int y, int selfx, int selfy, double radius){
 		
 		for(int i=(int)-radius; i<=radius; i++)for(int j=(int)-radius; j<=radius; j++){
@@ -515,4 +524,54 @@ class Isle implements Runnable{
 		
 		return false;
 	}
+}
+
+
+
+class Growth implements Runnable{
+	
+	short[][] distance_to_sea;
+	ArrayList<short[]> growpositions;
+	ArrayList<short[]> diepositions;
+	
+	public Growth(){
+		growpositions=new ArrayList<short[]>();
+		diepositions=new ArrayList<short[]>();
+	}
+	
+	public void setDistance(short[][] distance_to_sea){
+		this.distance_to_sea=distance_to_sea;
+	}
+	
+	public void run(){
+		
+		for(short i=0; i<distance_to_sea.length; i++)for(short j=0; j<distance_to_sea[i].length; j++){	
+			if(distance_to_sea[i][j]>0){
+					
+				if((new Random()).nextInt(25000)==0){
+					diepositions.add(new short[]{i,j});
+				}
+				
+				if( (new Random()).nextInt(10000)==0 && (new Random()).nextDouble()<treeChance(i,j) ){
+					growpositions.add(new short[]{i,j});
+				}
+					
+			}
+		}
+	}
+	
+	public double treeChance(int x, int y){return Math.min(0.45, 1-Math.exp(-0.042*distance_to_sea[x][y]));}
+	
+	public ArrayList<short[]> getGrowPos(){
+		ArrayList<short[]> tmp=growpositions;
+		growpositions=new ArrayList<short[]>();
+		return tmp;
+	}
+	
+	public ArrayList<short[]> getDiePos(){
+		ArrayList<short[]> tmp=diepositions;
+		diepositions=new ArrayList<short[]>();
+		return tmp;
+	}
+	
 }

@@ -16,7 +16,7 @@ class Inventory{
 	
 	EnumMap<Item,Integer> items;
 	protected static final int spritesize=32;
-	ArrayList<InventoryTransformer> transformers;
+	ArrayList<InventoryTransformer> transformers;//iether and or or-transformers
 	
 	public Inventory(){
 		items=new EnumMap<Item,Integer>(Item.class);
@@ -50,6 +50,12 @@ class Inventory{
 	
 	public Set<Entry<Item ,Integer>> returnItems(){
 		return items.entrySet();
+	}
+	
+	public String describe(){
+		String rtn="";
+		for(Entry<Item ,Integer> entry: items.entrySet())rtn+=entry.getKey()+" ";
+		return rtn;
 	}
 	
 	public boolean contains(Item item){
@@ -115,17 +121,24 @@ class Inventory{
 			
 			if(transformer.countdown())return true;
 			
+			Item[] outbounds=transformer.getOutbound();
+			Item[] inbounds=transformer.getInbound(items);
 			
-			if(items.containsKey(transformer.getInbound())){
-				Integer amount=items.get(transformer.getInbound());
+			if(inbounds!=null){
+				if(outbounds!=null)for(Item out: outbounds)give(out,1);
+				for(Item in: inbounds){
+					Integer amount=items.get(in);
 				
-				if(amount>1){
-					items.put(transformer.getInbound(), amount-1);
-					return true;
-				}else{
-					items.remove(transformer.getInbound());
+					if(amount>1){
+						items.put(in, amount-1);
+					}else{
+						items.remove(in);
+					}
+					
 				}
-			}	
+				return true;
+			}
+			
 		}	
 		return false;
 	}
@@ -191,23 +204,22 @@ class PlayerInventory extends Inventory{
 		((Graphics2D)g).setStroke(new BasicStroke(1));
 		g.setColor(Color.green);
 		g.drawRect(activeindex*spritesize, 36, spritesize, spritesize);
-		if(items!=null && !items.isEmpty())
+		if(items!=null && !items.isEmpty() && activeindex<items.size()){
 			g.drawString(""+getAsArrayList().get(activeindex).getKey(), index*spritesize, 64);
-		
+		}
 	}
-	
 }
 
 // a class that holds information about item transformations inside inventories
 // for example, fireplace inventories might consume wood, plantfibers, berries, fish
 // and produce cooked fish and charcoal(and light, but that is not an item).
 //humaniods might consume food for survival.
-class InventoryTransformer{
-	Item inbound=null, outbound=null;
+abstract class InventoryTransformer{
+	Item[] inbound=null, outbound=null;
 	static final int rate=350;
 	int timer=rate;
 	
-	public InventoryTransformer(Item inbound, Item outbound){
+	public InventoryTransformer(Item[] inbound, Item[] outbound){
 		this.inbound=inbound;
 		this.outbound=outbound;
 	}
@@ -219,13 +231,44 @@ class InventoryTransformer{
 		}else return true;
 	}
 	
-	public Item getInbound(){
+	abstract public Item[] getInbound(EnumMap<Item,Integer> items);
+	
+	public Item[] getOutbound(){
+		return outbound;
+	}
+	
+}
+
+class OrTransformer extends InventoryTransformer{
+	
+	public OrTransformer(Item[] inbound, Item[] outbound){
+		super(inbound,outbound);
+	}
+	
+	public Item[] getInbound(EnumMap<Item,Integer> items){
+		
+		for(Item i: inbound){
+			if(items.containsKey(i))return new Item[]{i};
+		}
+		return null;
+	}
+	
+}
+
+class AndTransformer extends InventoryTransformer{
+	
+	public AndTransformer(Item[] inbound, Item[] outbound){
+		super(inbound,outbound);
+	}
+	
+	public Item[] getInbound(EnumMap<Item,Integer> items){
+		
+		for(Item i: inbound){
+			if(!items.containsKey(i))return null;
+		}
 		return inbound;
 	}
 	
-	public Item getOutbound(){
-		return outbound;
-	}
 }
 
 class InventoryFactory{
@@ -271,14 +314,14 @@ class InventoryFactory{
 		rtn.give(Item.stick , (new Random()).nextInt(2));
 		rtn.give(Item.berries , 5+(new Random()).nextInt(5));
 		rtn.give(Item.stone , 5);
-		rtn.addTransformer(new InventoryTransformer(Item.berries, null));//transformer could be static
+		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish}, null));//transformer could be static
 		return rtn;
 	}
 	
 	public static Inventory createHumanoidInventory(){	
 		Inventory rtn=new Inventory();
 		rtn.give(Item.berries , 10+(new Random()).nextInt(10));
-		rtn.addTransformer(new InventoryTransformer(Item.berries, null));//transformer could be static
+		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish}, null));//transformer could be static
 		return rtn;
 	}
 	

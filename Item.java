@@ -34,6 +34,9 @@ enum Item{
 		if(value==1){
 			intitialize_plantfiber();
 		}
+		if(value==2){
+			intitialize_fish();
+		}
 		if(value==3){
 			intitialize_berries();
 		}
@@ -103,6 +106,16 @@ enum Item{
 		
 		try{
 			image=ImageIO.read(new File("PlantFiber.png"));
+			maskSpriteColour(new Color(image.getRGB(0,0)));
+		}catch(IOException e){
+			
+		}
+	}
+	
+	private void intitialize_fish(){
+		
+		try{
+			image=ImageIO.read(new File("Fish.png"));
 			maskSpriteColour(new Color(image.getRGB(0,0)));
 		}catch(IOException e){
 			

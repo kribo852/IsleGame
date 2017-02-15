@@ -81,8 +81,13 @@ abstract class Assembler{
 			for(int i=0; i<recipeinventory.length; i++)for(int j=0; j<recipeinventory[i].length; j++){
 				if(recipeinventory[i][j]!=null)
 					g.drawImage(recipeinventory[i][j].getSprite() , i*imagesize, yoffset+j*imagesize , null);
-			}		
+			}
+			g.setColor(Color.green);
+			g.drawString(""+describe(), 200, 200);		
 		}
+		
+		public String describe(){return "";}
+		
 	}
 	
 	
@@ -102,6 +107,7 @@ class BuildingAssembler extends Assembler{
 		
 		public Building getBuilding(){return building;}
 	
+		public String describe(){return building.getClass().getName();}
 	}
 	
 	static BuildingRecipe createBoatRecipe(){
@@ -181,11 +187,10 @@ class BuildingAssembler extends Assembler{
 					if(map[x][y]==null){//problematic if items dissapear
 						map[x][y]=r.getBuilding();
 						
-						if(r.getBuilding() instanceof Torch)
-							DayCycleClass.addLitPosition(x,y,6);
-							
-						else if(r.getBuilding() instanceof FirePlace)
-							DayCycleClass.addLitPosition(x,y,10);
+						if(r.getBuilding() instanceof Torch){
+							map[x][y]=new Torch(x,y);
+						}else if(r.getBuilding() instanceof FirePlace)
+							map[x][y]=new FirePlace(x,y);
 						
 						System.out.println("crafting");
 						return true;
@@ -195,6 +200,7 @@ class BuildingAssembler extends Assembler{
 		}
 		return false;
 	}
+	
 }
 
 // a class that transforms items in crafting formations on the ground
@@ -214,7 +220,8 @@ class ItemAssembler extends Assembler{
 			rtn.give(outbound);
 			return rtn;
 		}
-	
+		
+		public String describe(){return outbound.describe();}
 	}
 	
 	 static ItemRecipe createStoneAxeRecipe(){
@@ -254,7 +261,10 @@ class ItemAssembler extends Assembler{
 					Object o=m.invoke(null,new Object[0]);
 					if(craftItem(map,x,y,((ItemRecipe)o)))return;
 				}catch(IllegalAccessException iae){
-				}catch(InvocationTargetException ite){}
+					System.err.println("reflection IllegalAccessException");
+				}catch(InvocationTargetException ite){
+					System.err.println("reflection InvocationTargetException");
+				}
 			}
 	}
 	
@@ -276,9 +286,10 @@ class ItemAssembler extends Assembler{
 		}
 		return false;
 	}
+	
 }
 
-//These can be shown at any time, sea or land, should use metaprogramming to 
+//These can be shown at any time, sea or land
 class ShowCrafteables{
 	
 	Assembler items;
@@ -353,12 +364,11 @@ class ShowCrafteables{
 		try{
 			Object o=m.invoke(null,new Object[0]);
 			((Assembler.Recipe)o).paint(25,32,graphics);
+			
 		}catch(IllegalAccessException iae){
-			System.err.println("THATSBAD (ASSEMBLER FILE)");
+			System.err.println("reflection IllegalAccessException");
 		}catch(InvocationTargetException ite){
-			System.err.println("THATSBAD  (ASSEMBLER FILE)");
-		}
-		
+			System.err.println("reflection InvocationTargetException");
+		}	
 	}
-	
 }
