@@ -20,7 +20,10 @@ enum Item{
 		stoneaxe(8),
 		rope(9),
 		fishnet(10),
-		reed(11);
+		reed(11),
+		mushroom(12),
+		clay(13),
+		herb(14);
 	
 		private BufferedImage image;
 		private int value;
@@ -40,6 +43,9 @@ enum Item{
 		if(value==3){
 			intitialize_berries();
 		}
+		if(value==5){
+			intitialize_shell();
+		}
 		if(value==6){
 			intitialize_log();
 		}
@@ -54,8 +60,12 @@ enum Item{
 		}
 		if(value==10){
 			intitialize_fishnet();
-		}if(value==11){
+		}
+		if(value==11){
 			intitialize_reed();
+		}
+		if(value==12){
+			intitialize_mushroom();
 		}
 		
 	}
@@ -136,6 +146,26 @@ enum Item{
 		
 		try{
 			image=ImageIO.read(new File("Rope.png"));
+			maskSpriteColour(new Color(image.getRGB(0,0)));
+		}catch(IOException e){
+			
+		}
+	}
+	
+	private void intitialize_shell(){
+		
+		try{
+			image=ImageIO.read(new File("Shell.png"));
+			maskSpriteColour(new Color(image.getRGB(0,0)));
+		}catch(IOException e){
+			
+		}
+	}
+	
+	private void intitialize_mushroom(){
+		
+		try{
+			image=ImageIO.read(new File("Mushroom.png"));
 			maskSpriteColour(new Color(image.getRGB(0,0)));
 		}catch(IOException e){
 			

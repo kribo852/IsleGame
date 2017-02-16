@@ -314,7 +314,7 @@ class InventoryFactory{
 		rtn.give(Item.stick , (new Random()).nextInt(2));
 		rtn.give(Item.berries , 5+(new Random()).nextInt(5));
 		rtn.give(Item.stone , 5);
-		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish}, null));//transformer could be static
+		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish, Item.shell}, null));//transformer could be static
 		return rtn;
 	}
 	
@@ -328,6 +328,18 @@ class InventoryFactory{
 	public static Inventory createReedInventory(){	
 		Inventory rtn=new Inventory();
 		rtn.give(Item.reed , 9+(new Random()).nextInt(3));
+		return rtn;
+	}
+	
+	public static Inventory createMushroomInventory(){	
+		Inventory rtn=new Inventory();
+		rtn.give(Item.mushroom , 2+(new Random()).nextInt(2));
+		return rtn;
+	}
+	
+	public static Inventory createShellInventory(){	
+		Inventory rtn=new Inventory();
+		rtn.give(Item.shell , 1);
 		return rtn;
 	}
 

@@ -35,11 +35,11 @@ class Isle implements Runnable{
 		}
 	
 	public Isle(int seedx, int seedy, int islesize){
-			this.seedx=seedx;
-			this.seedy=seedy;
-			this.islesize=islesize;
-			landplayer=null;
-			growth=new Growth();
+		this.seedx=seedx;
+		this.seedy=seedy;
+		this.islesize=islesize;
+		landplayer=null;
+		growth=new Growth();
 	}
 
 	//generates island in new thread
@@ -226,10 +226,21 @@ class Isle implements Runnable{
 		growth.setDistance(distance_to_sea);
 		
 		for(short[] s:growth.getGrowPos()){
-			if(layout[s[0]][s[1]]==LandType.grass && isEmpty(s[0],s[1])){
-				ArrayList<Class> livingtrees=findSeedTrees(s[0],s[1]);
-				if(!livingtrees.isEmpty())
-					objects[s[0]][s[1]]=singletontreefactory.getLiveTreeOfType(livingtrees.get(RND.nextInt(livingtrees.size())));
+			if(isEmpty(s[0],s[1])){
+				if(layout[s[0]][s[1]]==LandType.grass){
+					ArrayList<Class> livingtrees=findSeedTrees(s[0],s[1]);
+					if(!livingtrees.isEmpty())
+						if(RND.nextInt(20)!=0)
+							objects[s[0]][s[1]]=singletontreefactory.getLiveTreeOfType(livingtrees.get(RND.nextInt(livingtrees.size())));
+						else {
+							objects[s[0]][s[1]]=new InventoryHolder();
+							objects[s[0]][s[1]].inventoryGive(InventoryFactory.createMushroomInventory());
+						}
+						
+				}else if(layout[s[0]][s[1]]==LandType.sand){
+					objects[s[0]][s[1]]=new InventoryHolder();
+					objects[s[0]][s[1]].inventoryGive(InventoryFactory.createShellInventory());
+				}
 			}
 		}
 		
