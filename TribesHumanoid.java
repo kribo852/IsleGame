@@ -8,16 +8,19 @@ class TribesHumanoid extends Humanoid{
 	ArrayList<int[]> path;
 	ArrayList<int[]> importantPositions;
 	
-	public TribesHumanoid(){
+	public TribesHumanoid(boolean fed){
 		super();
-		inventory=InventoryFactory.createHumanoidInventory();
 		path=new ArrayList<int[]>();
+		
+		if(fed)
+			inventory=InventoryFactory.createHumanoidInventory();
+		else
+			inventory=InventoryFactory.createStarvingHumanoidInventory();
 	}
 	
 	public void paint(Graphics g, int x, int y, int tilesize){
 			super.paint(g,x,y,tilesize);
 			g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
-			//System.out.println("#############");
 	}
 	
 	public Inventory updateInventory(){return null;}

@@ -321,7 +321,14 @@ class InventoryFactory{
 	public static Inventory createHumanoidInventory(){	
 		Inventory rtn=new Inventory();
 		rtn.give(Item.berries , 10+(new Random()).nextInt(10));
-		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish}, null));//transformer could be static
+		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish, Item.shell}, null));//transformer could be static
+		return rtn;
+	}
+	
+	public static Inventory createStarvingHumanoidInventory(){	
+		Inventory rtn=new Inventory();
+		rtn.give(Item.berries , 2);
+		rtn.addTransformer(new OrTransformer(new Item[]{Item.berries, Item.fish, Item.shell}, null));//transformer could be static
 		return rtn;
 	}
 	

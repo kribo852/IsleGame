@@ -605,9 +605,12 @@ class Boat extends Building{
 
 class House extends Building{
 	static BufferedImage[] sprites=null;
+	final int x, y;
 	
-	public House(){
+	public House(int x, int y){
 		setSprites();
+		this.x=x;
+		this.y=y;
 	}
 	
 	//best singleton pattern 
@@ -629,6 +632,10 @@ class House extends Building{
 		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
 	}
 	
+	public int getX(){return x;}
+	
+	public int getY(){return y;}
+	
 }
 
 class FirePlace extends Building{
@@ -638,7 +645,7 @@ class FirePlace extends Building{
 	public FirePlace(){setSprites();}
 	
 	public FirePlace(int x, int y){
-		this(x, y, 10);
+		this(x, y, 5);
 		setSprites();
 		particles=new FireFlame[50];
 		for(int i=0; i<particles.length; i++){
@@ -647,7 +654,7 @@ class FirePlace extends Building{
 		}
 	}
 	
-	protected FirePlace(int x, int y, int litradius){
+	protected FirePlace(int x, int y, double litradius){
 		DayCycleClass.addLitPosition(x, y, litradius);
 	}
 	
@@ -690,7 +697,7 @@ class Torch extends FirePlace{
 	public Torch(){setSprites();}
 		
 	public Torch(int x, int y){
-		super(x,y,6);
+		super(x,y,3.6);
 		setSprites();
 		particles=new FireFlame[20];
 		for(int i=0; i<particles.length; i++){
@@ -810,4 +817,79 @@ class SingletonTreeFactory{
 		
 		return null;
 	}
-}	
+}
+
+class Ghost extends Humanoid{
+	
+	double position;
+	int column;
+	boolean direction;
+	static BufferedImage sprites[];
+	
+	protected static final int[][] secndimage={{0,0,1,1,1,1,1,1,0,0},
+											   {0,1,1,6,6,5,5,1,1,0},
+											   {1,1,1,6,6,5,5,1,1,1},
+											   {1,7,7,0,0,0,0,4,4,1},
+											   {1,7,7,0,1,1,0,4,4,1},
+											   {1,8,8,0,1,1,0,3,3,1},
+											   {1,8,8,0,0,0,0,3,3,1},
+											   {1,1,1,9,9,2,2,1,1,1},
+											   {0,0,1,9,9,2,2,1,0,0},
+											   {0,0,1,1,1,1,1,1,0,0}};
+	
+	public Ghost(int column, boolean direction){
+		if(sprites==null)
+			setSprites();
+		this.column=column;
+		this.direction=direction;
+		position=0;
+	}
+	
+	public void paint(Graphics g, int offsetx, int offsety, int tilesize){
+		g.drawImage(sprites[0], (int)((getX(tilesize)-offsetx)*tilesize),  (int)((getY(tilesize)-offsety)*tilesize), tilesize, tilesize , null);
+		g.setColor(new Color(50,200,225,20));
+		g.fillRect((int)((getX(tilesize)-offsetx)*tilesize),  (int)((getY(tilesize)-offsety)*tilesize)  ,tilesize ,tilesize);
+	}
+	
+	
+	static void setSprites(){
+		sprites=new BufferedImage[1];
+		sprites[0]=new BufferedImage(32,32,BufferedImage.TYPE_INT_ARGB);
+		Graphics g=sprites[0].getGraphics();
+		for(int i=0; i<manimage.length; i++){
+			for(int j=0; j<manimage[i].length; j++){
+				if(manimage[i][j]==1)
+					g.setColor(new Color(75,50,25, 125));
+				else
+					g.setColor(Color.cyan);
+				
+					g.fillRect(j*2, i*2 ,2 ,2);
+			}
+		}	
+		maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);			
+	}
+	
+	public Inventory updateInventory(){return null;}
+	public void wantedMove(Isle island){}
+	
+	public int getColumn(){return column;}
+	public double getPosition(){return position;}
+	public void setPosition(double speed){position+=speed;}
+	
+	public double getX(double tilesize){
+		if(!direction){
+			return column;
+		}else{
+			return position/tilesize;
+		}
+	}
+	
+	public double getY(double tilesize){
+		if(direction){
+			return column;
+		}else{
+			return position/tilesize;
+		}
+	}
+	
+}

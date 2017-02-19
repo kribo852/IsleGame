@@ -190,11 +190,12 @@ class DayCycleClass{
 	static double hour=0;
 	static double speed=Math.PI/2000;
 	static HashSet<Integer> litpositions=new HashSet<Integer>();
+	static boolean day=true;
 	
-	static public void addLitPosition(int posx , int posy, int radius){
-		for(int i=-radius; i<radius; i++)
+	static public void addLitPosition(int posx , int posy, double radius){
+		for(int i=-(int)(radius+2); i<(int)(radius+2); i++)
 			if(i+posx>=0)
-			for(int j=-radius; j<radius; j++){
+			for(int j=-(int)(radius+2); j<(int)(radius+2); j++){
 				if(j+posy>=0)
 					if(i*i+j*j<radius*radius){
 						Integer repr=((posx+i)<<16)+posy+j;
@@ -215,12 +216,13 @@ class DayCycleClass{
 		if(litpositions.contains(repr)){
 			return true;
 		} 
-		return hour<1.6*Math.PI/2;
+		return day;
 	}
 	
 	static void update(){
 		hour+=speed;
 		hour%=(2*Math.PI);
+		day=hour<1.6*Math.PI/2;
 	}
 	
 }

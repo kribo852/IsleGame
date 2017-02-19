@@ -91,7 +91,7 @@ abstract class Assembler{
 	}
 	
 	
-	public static void craft(LandObject[][] map, int x, int y){};
+	public static boolean craft(LandObject[][] map, int x, int y){return false;}//return a landobject?
 	
 }
 
@@ -134,7 +134,7 @@ class BuildingAssembler extends Assembler{
 		Inventory[][] recipeinventory=new Inventory[][]{{reed,stick,log},{reed,stick,stick},{reed,stick,log}}; 
 		
 		rtn.recipeinventory=recipeinventory;
-		rtn.setBuilding(new House());
+		rtn.setBuilding(new House(-1, -1));
 		return rtn;
 	}
 	
@@ -143,7 +143,7 @@ class BuildingAssembler extends Assembler{
 		Inventory[][] recipeinventory=new Inventory[][]{{null,stick,stick,log},{stick,stick,stick,log},{null,stick,stick,log}}; 
 		
 		rtn.recipeinventory=recipeinventory;
-		rtn.setBuilding(new House());
+		rtn.setBuilding(new House(-1,-1));
 		return rtn;
 	}
 	
@@ -158,7 +158,7 @@ class BuildingAssembler extends Assembler{
 	
 	static BuildingRecipe createPalisadeRecipe(){
 		BuildingRecipe rtn=new BuildingRecipe();
-		Inventory[][] recipeinventory=new Inventory[][]{{stick,null,stick},{null,stick,null},{stick,null,stick}}; 
+		Inventory[][] recipeinventory=new Inventory[][]{{stick,null,stick},{rop,stick,rop},{stick,null,stick}}; 
 		
 		rtn.recipeinventory=recipeinventory;
 		rtn.setBuilding(new Palisade());
@@ -166,18 +166,20 @@ class BuildingAssembler extends Assembler{
 	}
 	
 	//too bad that this manipulates map
-	public static void craft(LandObject[][] map, int x, int y){
+	public static boolean craft(LandObject[][] map, int x, int y){
 		for(Method m:BuildingAssembler.class.getDeclaredMethods())
 			if(m.getReturnType() == BuildingRecipe.class){
 				try{
 					Object o=m.invoke(null,new Object[0]);
-					if(craftBuilding(map,x,y,((BuildingRecipe)o)))return;
+					if(craftBuilding(map,x,y,((BuildingRecipe)o)))return true;
 				}catch(IllegalAccessException iae){
 				}catch(InvocationTargetException ite){}
 			}
+			
+		return false;
 	}
 	
-	//this is in common between the Assemblers
+	
 	private static boolean craftBuilding(LandObject[][] map, int x, int y, BuildingRecipe r){
 			
 		for(int i=0; i>=-r.getWidth(); i--){
@@ -186,6 +188,11 @@ class BuildingAssembler extends Assembler{
 					r.SubtractItems(map, x+i, y+j);
 					if(map[x][y]==null){//problematic if items dissapear
 						map[x][y]=r.getBuilding();
+							
+						if(r.getBuilding() instanceof House){
+							map[x][y]=new House(x,y);
+						}
+						
 						
 						if(r.getBuilding() instanceof Torch){
 							map[x][y]=new Torch(x,y);
@@ -253,19 +260,20 @@ class ItemAssembler extends Assembler{
 	}
 	
 	//too bad that this manipulates map
-	public static void craft(LandObject[][] map, int x, int y){
+	public static boolean craft(LandObject[][] map, int x, int y){
 		
 		for(Method m:ItemAssembler.class.getDeclaredMethods())
 			if(m.getReturnType() == ItemRecipe.class){
 				try{
 					Object o=m.invoke(null,new Object[0]);
-					if(craftItem(map,x,y,((ItemRecipe)o)))return;
+					if(craftItem(map,x,y,((ItemRecipe)o)))return true;
 				}catch(IllegalAccessException iae){
 					System.err.println("reflection IllegalAccessException");
 				}catch(InvocationTargetException ite){
 					System.err.println("reflection InvocationTargetException");
 				}
 			}
+		return false;
 	}
 	
 	private static boolean craftItem(LandObject[][] map, int x, int y, ItemRecipe r){
