@@ -275,7 +275,6 @@ class Isle implements Runnable{
 							if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()] instanceof House){
 								houses.add((House)objects[landplayer.getPlaceX()][landplayer.getPlaceY()]);
 							}
-							
 						}
 					}
 					else{
@@ -352,7 +351,7 @@ class Isle implements Runnable{
 			}
 		}
 		
-		TryAddPopulation();
+		tryAddPopulation();
 		
 		for(Humanoid human: population){
 			int cposx=human.getX();
@@ -407,7 +406,6 @@ class Isle implements Runnable{
 					}//fishing
 					if(distance_to_sea[human.getPlaceX()][human.getPlaceY()]==0 && human.itemActive(Item.fishnet)){
 						if(RND.nextInt(10)==0)human.inventoryGive(new Inventory(Item.fish,1));
-						
 					}
 				}
 			}	
@@ -455,6 +453,10 @@ class Isle implements Runnable{
 	boolean isPalisade(int x, int y){
 		if(isEmpty(x,y))return false;//null is not a bush
 		return (objects[x][y] instanceof Palisade);
+	}
+	
+	boolean isWater(int x, int y){
+		return layout[x][y]==LandType.water;
 	}
 	
 	boolean canSail(LandPlayer h){
@@ -609,11 +611,12 @@ class Isle implements Runnable{
 		}
 	}
 	
-	public void TryAddPopulation(){
+	public void tryAddPopulation(){
 		
 		if(population.size()>1){
 			if(houses.size()*10>population.size()){
-				if(RND.nextInt(100)==0){
+				int speed=Math.max(1200/population.size(), 1);
+				if(RND.nextInt(speed)==0){
 					House tmp=houses.get(RND.nextInt(houses.size()));
 					for(int i=-1; i<2; i++)for(int j=-1; j<2; j++){
 						if(addFolk(i+tmp.getX(),j+tmp.getY())){
@@ -622,12 +625,12 @@ class Isle implements Runnable{
 					}
 				}
 			}
-		}	
+		}
 	}
 	//reuseable at initialization
 	public boolean addFolk(int x, int y){
 		
-		if(insideMapPos(x,y) && isEmpty(x,y) && layout[x][y]!=LandType.water){//check for water?
+		if(insideMapPos(x,y) && isEmpty(x,y) && !isWater(x,y)){//check for water?
 			Humanoid h=new TribesHumanoid(false);
 			objects[x][y]=h;
 			h.setX(x);

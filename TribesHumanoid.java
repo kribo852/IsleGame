@@ -26,6 +26,25 @@ class TribesHumanoid extends Humanoid{
 	public Inventory updateInventory(){return null;}
 	
 	public void wantedMove(Isle island){
+		
+		
+		if(DayCycleClass.isDay() &&inventory.contains(Item.fishnet)){
+			for(int i=-1; i<2; i++){
+				for(int j=-1; j<2; j++){
+					if(island.insideMapPos(getX()+i, getY()+j) && island.isWater(getX()+i, getY()+j)){
+						action=true;
+						placex=i;
+						placey=j;
+						return;
+					}
+				}
+			}
+		}
+		
+		Scout(island);
+	}
+	
+	public void Scout(Isle island){
 		if((new Random()).nextDouble()>0.4)
 			return;
 		
@@ -58,8 +77,10 @@ class TribesHumanoid extends Humanoid{
 		if(!path.isEmpty()){	
 			int [] nextpos=path.remove(0);
 			if(Math.abs(x-nextpos[0]+y-nextpos[1])<=2){
-				x=nextpos[0];
-				y=nextpos[1];
+				if(!(DayCycleClass.positionLit(x,y) && !DayCycleClass.positionLit(nextpos[0],nextpos[1]))){
+					x=nextpos[0];
+					y=nextpos[1];
+				}
 				return;
 			}else{
 				path.clear();
@@ -90,6 +111,6 @@ class TribesHumanoid extends Humanoid{
 			dx+=xdir;
 			dy+=ydir;
 		}
-		
 	}
+	
 }

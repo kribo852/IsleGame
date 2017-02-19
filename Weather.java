@@ -225,4 +225,8 @@ class DayCycleClass{
 		day=hour<1.6*Math.PI/2;
 	}
 	
+	static boolean isDay(){
+		return day;
+	}
+	
 }
