@@ -615,7 +615,7 @@ class Isle implements Runnable{
 		
 		if(population.size()>1){
 			if(houses.size()*10>population.size()){
-				int speed=Math.max(1200/population.size(), 1);
+				int speed=Math.max(12000/population.size(), 1);
 				if(RND.nextInt(speed)==0){
 					House tmp=houses.get(RND.nextInt(houses.size()));
 					for(int i=-1; i<2; i++)for(int j=-1; j<2; j++){
