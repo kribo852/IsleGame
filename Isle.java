@@ -196,7 +196,7 @@ class Isle implements Runnable{
 		
 		for(int i=0; i<layout.length; i++){
 			for(int j=0; j<layout[0].length; j++){
-				if(layout[i][j]!=LandType.water){
+				if(layout[i][j]!=LandType.water  &&  isEmpty(i,j)){
 					if(RND.nextInt(200)==0){
 						objects[i][j]=new InventoryHolder();
 						objects[i][j].inventoryGive(InventoryFactory.createGroundInventory());
@@ -344,10 +344,7 @@ class Isle implements Runnable{
 				}
 			}
 			if(markforremoval!=-1){
-				Inventory tmp=objects[population.get(markforremoval).getX()][population.get(markforremoval).getY()].returnInventory();
-				objects[population.get(markforremoval).getX()][population.get(markforremoval).getY()]=new InventoryHolder();
-				objects[population.get(markforremoval).getX()][population.get(markforremoval).getY()].inventoryGive(tmp);
-				population.remove(markforremoval);
+				removeHumanoid(population.get(markforremoval).getX(), population.get(markforremoval).getY());
 			}
 		}
 		
@@ -364,7 +361,7 @@ class Isle implements Runnable{
 					if(isBush(human.getX(), human.getY())){
 						LayeredDecorator laydec=new LayeredDecorator();
 						laydec.addLayer(human);
-						laydec.addLayer(objects[human.getX()][human.getY()]);
+						laydec.addLayer(objects[human.getX()][human.getY()]);//add bush
 						objects[human.getX()][human.getY()]=laydec;
 					}
 					//items picked up by an inhabitant
@@ -378,8 +375,9 @@ class Isle implements Runnable{
 				
 					if(objects[cposx][cposy].getClass()==LayeredDecorator.class){
 						objects[cposx][cposy]=((LayeredDecorator)objects[cposx][cposy]).removeLayer(human);
-					}else{
-						objects[cposx][cposy]=null;
+					}
+					else{
+						objects[cposx][cposy]=null;//removes person from old location
 				    }
 					moved=true;
 					
@@ -605,8 +603,10 @@ class Isle implements Runnable{
 				}
 			}
 			if(index!=-1){
+				Inventory tmp=objects[x][y].returnInventory();
+				objects[x][y]=new InventoryHolder();
+				objects[x][y].inventoryGive(tmp);
 				population.remove(index);
-				objects[x][y]=null;
 			}
 		}
 	}
@@ -615,7 +615,7 @@ class Isle implements Runnable{
 		
 		if(population.size()>1){
 			if(houses.size()*10>population.size()){
-				int speed=Math.max(12000/population.size(), 1);
+				int speed=Math.max(4000/population.size(), 1);
 				if(RND.nextInt(speed)==0){
 					House tmp=houses.get(RND.nextInt(houses.size()));
 					for(int i=-1; i<2; i++)for(int j=-1; j<2; j++){
