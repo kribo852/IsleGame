@@ -30,13 +30,21 @@ class LandTexture{
 	 BufferedImage[] grasstiles;
 	 BufferedImage[] sandtiles;
 	 BufferedImage claytile;
+	 static final byte GRASS_BUFFER_SIZE=23;
 	 
 	 public LandTexture(int size, boolean daytextures){
-		grasstiles=new BufferedImage[23];
+		grasstiles=new BufferedImage[GRASS_BUFFER_SIZE];
 		sandtiles=new BufferedImage[7];
 		
-		for(int i=0; i<grasstiles.length; i++)
-			grasstiles[i]=makeGrassTexture(size, LandType.grass.getColour());
+		{
+		BufferedImage tmp=makeGrassTexture(size, LandType.grass.getColour());
+			for(int i=0; i<grasstiles.length; i++){
+				grasstiles[i]=new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+				Graphics g=grasstiles[i].getGraphics();
+				g.drawImage(tmp , 0,0,size,size,
+				0, (i*size),size,(i*size)+size ,null);
+			}
+		}
 			
 		for(int i=0; i<sandtiles.length; i++)
 			sandtiles[i]=makeNoisyTexture(size, LandType.sand.getColour());
@@ -106,31 +114,23 @@ class LandTexture{
 	
 	//the double painting is done to prevent horizontal lines due to cuttof in grassstraw generations
 	private BufferedImage makeGrassTexture(int size, Color groundcolour){
-		BufferedImage tmp=new BufferedImage(size,2*size,BufferedImage.TYPE_INT_ARGB);
+		BufferedImage rtn=new BufferedImage(size,GRASS_BUFFER_SIZE*size,BufferedImage.TYPE_INT_ARGB);
 		
 		for(int i=0; i<size; i++){
-			for(int j=0; j<tmp.getHeight(); j++){
-				tmp.setRGB(i,j,groundcolour.getRGB());
+			for(int j=0; j<rtn.getHeight(); j++){
+				rtn.setRGB(i,j,groundcolour.getRGB());
 			}	
 		}
 		
-		for(int iteration=0; iteration<320; iteration++){
+		for(int iteration=0; iteration<2250; iteration++){
 			
 			int x=((new Random()).nextInt(size));
-			int y=((new Random()).nextInt(tmp.getHeight()));
-			int length=2+((new Random()).nextInt(4));
+			int y=((new Random()).nextInt(rtn.getHeight()));
+			int length=8+((new Random()).nextInt(8));
 			
-			for(int i=0; i<length && i+y<tmp.getHeight(); i++){
-				Color c=new Color(tmp.getRGB(x , y+i));
-				tmp.setRGB(x , y+i , c.darker().getRGB());
-			}	
-		}
-		
-		BufferedImage rtn=new BufferedImage(size,size,BufferedImage.TYPE_INT_ARGB);
-		
-		for(int i=0; i<size; i++){
-			for(int j=0; j<size; j++){
-				rtn.setRGB(i,j,tmp.getRGB(i,j+size/2));
+			for(int i=0; i<length && i<rtn.getHeight(); i++){
+				Color c=new Color(rtn.getRGB(x , (y+i)%rtn.getHeight()));
+				rtn.setRGB(x , (y+i)%rtn.getHeight() , c.darker().getRGB());
 			}	
 		}
 		
@@ -142,8 +142,9 @@ class LandTexture{
 		int seed=x+1+x*y;
 		
 		if(l==LandType.grass){
-			seed%=grasstiles.length;
-			return grasstiles[seed];
+			seed=y+x*x+x;
+
+			return grasstiles[seed%GRASS_BUFFER_SIZE];
 		}
 		else if(l==LandType.sand){
 			seed%=sandtiles.length;
@@ -154,7 +155,7 @@ class LandTexture{
 		return null;
 	}
 	
-	public void useAsNightTextures(){
+	private void useAsNightTextures(){
 		Color mask=new Color(25,35,50,120);
 		for(BufferedImage image: grasstiles){
 			

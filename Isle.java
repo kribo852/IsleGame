@@ -612,11 +612,12 @@ class Isle implements Runnable{
 	}
 	
 	public void tryAddPopulation(){
+		final double rate=0.01;
 		
 		if(population.size()>1){
 			if(houses.size()*10>population.size()){
-				int speed=Math.max(4000/population.size(), 1);
-				if(RND.nextInt(speed)==0){
+				double growthspeed=(1-Math.exp(-population.size()*rate))*rate;
+				if(RND.nextDouble()<growthspeed){
 					House tmp=houses.get(RND.nextInt(houses.size()));
 					for(int i=-1; i<2; i++)for(int j=-1; j<2; j++){
 						if(addFolk(i+tmp.getX(),j+tmp.getY())){
@@ -644,8 +645,10 @@ class Isle implements Runnable{
 	
 }
 
-
-
+/**
+ *class for growth of trees 
+ * 
+ */
 class Growth implements Runnable{
 	
 	short[][] distance_to_sea;

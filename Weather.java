@@ -87,15 +87,17 @@ class Rainfall implements Runnable{
 	boolean nextframeready=false;
 	Random RND=new Random();
 	Color lighcol=new Color(200,200,255,120);
+	Color raincol=new Color(0,100,100);
+
 	
 	
 	public Rainfall(){
-		rain=new Raindrop[500];
+		rain=new Raindrop[50];
 	
 		for(int i=0; i<rain.length; i++){
 			rain[i]=new Raindrop();
 			double angle=Math.PI/2+Math.PI*0.2*RND.nextDouble();
-			double speed=10+10*(new Random()).nextDouble();
+			double speed=100+100*(new Random()).nextDouble();
 			rain[i].dx=speed*Math.cos(angle);
 			rain[i].dy=speed*Math.sin(angle);
 			rain[i].y=RND.nextInt(1000);
@@ -137,8 +139,11 @@ class Rainfall implements Runnable{
 				g.clearRect(0,0,800, 800);
 			}
 			
+			g.setColor(raincol);
+			((Graphics2D)g).setStroke(new BasicStroke(1));
 			for(int i=0; i<rain.length; i++){
-				g.drawImage(Raindrop.image, (int)rain[i].x , (int)rain[i].y , null);
+				//g.drawImage(Raindrop.image, (int)rain[i].x , (int)rain[i].y , null);
+				g.drawLine((int)rain[i].x , (int)rain[i].y, (int)(rain[i].x+rain[i].dx) , (int)(rain[i].y+rain[i].dy));
 			}
 			
 			windangle+=(active? Math.PI/50 : Math.PI/400)%Math.PI;	
