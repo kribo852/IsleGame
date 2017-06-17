@@ -9,6 +9,7 @@ import java.awt.BasicStroke;
 import java.util.Random;
 import java.util.ArrayList;
 import java.awt.Graphics;
+import java.util.HashSet;
 
 abstract class LandObject{
 	static BufferedImage sprites[];
@@ -606,11 +607,34 @@ class Boat extends Building{
 class House extends Building{
 	static BufferedImage[] sprites=null;
 	final int x, y;
+	static HashSet<Integer> proximatpositions;
 	
 	public House(int x, int y){
 		setSprites();
 		this.x=x;
 		this.y=y;
+		if(proximatpositions==null)proximatpositions=new HashSet<Integer>();
+		addProxies(x,y); 
+	}
+	
+	public House(){x=y=-1;}
+	
+	private void addProxies(int x, int y){
+		if(proximatpositions==null)proximatpositions=new HashSet<Integer>();
+		
+		for(int i=-1; i<2; i++)for(int j=-1; j<2; j++){
+			if(i!=0 || j!=0)proximatpositions.add(((y+j)<<16)+(x+i));
+		}
+		
+	}
+	
+	static public int[] getRandomProxyPosition(){
+		if(proximatpositions==null)return null;
+		
+		int position=(new Random()).nextInt(proximatpositions.size());
+		ArrayList<Integer> positions=new ArrayList<Integer>();
+		positions.addAll(proximatpositions);
+		return new int[]{positions.get(position) & 0xFFFF, positions.get(position)>>16};
 	}
 	
 	//best singleton pattern 
@@ -764,6 +788,77 @@ class Palisade extends Building{
 	public void paint(Graphics g, int x, int y, int tilesize){
 		g.drawImage(sprites[0], x*tilesize,  y*tilesize, tilesize, tilesize,null);
 	}
+	
+}
+
+class LightHouse extends Building{
+	static BufferedImage[] sprites=null;
+	final int x, y;
+	static ArrayList<LightHouse> lighthouses;
+	static HashSet<Integer> proximatpositions;
+	
+	public LightHouse(int x, int y){
+		setSprites();
+		this.x=x;
+		this.y=y;
+		if(lighthouses==null)lighthouses=new ArrayList<LightHouse>();
+		lighthouses.add(this);
+		addProxies(x,y);
+	}
+	
+	public LightHouse(){
+		x=-1;
+		y=-1;
+		setSprites();
+	}
+	
+	private void addProxies(int x, int y){
+		if(proximatpositions==null)proximatpositions=new HashSet<Integer>();
+		
+		for(int i=-1; i<2; i++)for(int j=-1; j<2; j++){
+			if(i!=0 || j!=0)proximatpositions.add(((y+j)<<16)+(x+i));
+		}
+		
+	}
+	
+	static public int[] getRandomProxyPosition(){
+		int position=(new Random()).nextInt(proximatpositions.size());
+		ArrayList<Integer> positions=new ArrayList<Integer>();
+		positions.addAll(proximatpositions);
+		return new int[]{positions.get(position) & 0xFFFF, positions.get(position)>>16};
+	}
+	
+	static public boolean isProxy(int x, int y){
+		return proximatpositions!=null && proximatpositions.contains((y<<16)+x);
+	}
+	
+	static public int getNumberOf(){
+		if(lighthouses==null)return 0;
+		return lighthouses.size();
+	}
+	
+	//best singleton pattern 
+	static void setSprites(){
+		if(sprites==null){
+			sprites=new BufferedImage[1];
+	
+			try{
+				sprites[0]=ImageIO.read(new File("LightHouse.png"));
+				maskSpriteColour(new Color(sprites[0].getRGB(0,0)) , sprites);
+				
+			}catch(IOException e){
+		
+			}
+		}
+	}
+	
+	public void paint(Graphics g, int x, int y, int tilesize){
+		g.drawImage(sprites[0], x*tilesize,  (y-1)*tilesize, 2*tilesize, 2*tilesize,null);
+	}
+	
+	public int getX(){return x;}
+	
+	public int getY(){return y;}
 	
 }
 

@@ -98,15 +98,10 @@ abstract class Assembler{
 // a class that transforms items in crafting formations on the ground
 class BuildingAssembler extends Assembler{
 	
-	
 	static class BuildingRecipe extends Recipe{
-	
 		private Building building;
-		
 		public void setBuilding(Building building){this.building=building;}
-		
 		public Building getBuilding(){return building;}
-	
 		public String describe(){return building.getClass().getName();}
 	}
 	
@@ -134,7 +129,7 @@ class BuildingAssembler extends Assembler{
 		Inventory[][] recipeinventory=new Inventory[][]{{reed,stick,log},{reed,stick,stick},{reed,stick,log}}; 
 		
 		rtn.recipeinventory=recipeinventory;
-		rtn.setBuilding(new House(-1, -1));
+		rtn.setBuilding(new House());
 		return rtn;
 	}
 	
@@ -143,7 +138,7 @@ class BuildingAssembler extends Assembler{
 		Inventory[][] recipeinventory=new Inventory[][]{{null,stick,stick,log},{stick,stick,stick,log},{null,stick,stick,log}}; 
 		
 		rtn.recipeinventory=recipeinventory;
-		rtn.setBuilding(new House(-1,-1));
+		rtn.setBuilding(new House());
 		return rtn;
 	}
 	
@@ -165,6 +160,15 @@ class BuildingAssembler extends Assembler{
 		return rtn;
 	}
 	
+	static BuildingRecipe createLightHouseRecipe(){
+		BuildingRecipe rtn=new BuildingRecipe();
+		Inventory[][] recipeinventory=new Inventory[][]{{stick,log,log},{stick,log,log},{stick,log,log},{null,stick,log}}; 
+		
+		rtn.recipeinventory=recipeinventory;
+		rtn.setBuilding(new LightHouse());
+		return rtn;
+	}
+	
 	//too bad that this manipulates map
 	public static boolean craft(LandObject[][] map, int x, int y){
 		for(Method m:BuildingAssembler.class.getDeclaredMethods())
@@ -174,14 +178,11 @@ class BuildingAssembler extends Assembler{
 					if(craftBuilding(map,x,y,((BuildingRecipe)o)))return true;
 				}catch(IllegalAccessException iae){
 				}catch(InvocationTargetException ite){}
-			}
-			
+			}	
 		return false;
 	}
 	
-	
 	private static boolean craftBuilding(LandObject[][] map, int x, int y, BuildingRecipe r){
-			
 		for(int i=0; i>=-r.getWidth(); i--){
 			for(int j=0; j>=-r.getHeight(); j--){
 				if(r.lessOrEqual(map, x+i, y+j)){
@@ -192,7 +193,9 @@ class BuildingAssembler extends Assembler{
 						if(r.getBuilding() instanceof House){
 							map[x][y]=new House(x,y);
 						}
-						
+						if(r.getBuilding() instanceof LightHouse){
+							map[x][y]=new LightHouse(x,y);
+						}
 						
 						if(r.getBuilding() instanceof Torch){
 							map[x][y]=new Torch(x,y);

@@ -258,34 +258,7 @@ class Isle implements Runnable{
 		t.start();
 		
 		updateHumanoids(population);
-		{
-			Inventory tmp=landplayer.updateInventory();
-			if(tmp!=null){
-				if(insideMapPos(landplayer.getPlaceX(), landplayer.getPlaceY()) &&
-				layout[landplayer.getPlaceX()][landplayer.getPlaceY()]!=LandType.water){
-					//empty placeholding landbjects with inventories should never exist and hence are not concerned
-					if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()]==null){
-						objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=new InventoryHolder();
-						objects[landplayer.getPlaceX()][landplayer.getPlaceY()].inventoryGive(tmp);
-						ItemAssembler.craft(objects,landplayer.getPlaceX(), landplayer.getPlaceY());
-						
-						//something built
-						if(BuildingAssembler.craft(objects,landplayer.getPlaceX(), landplayer.getPlaceY())){
-							
-							if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()] instanceof House){
-								houses.add((House)objects[landplayer.getPlaceX()][landplayer.getPlaceY()]);
-							}
-						}
-					}
-					else{
-						landplayer.inventoryGive(tmp);
-					}
-					
-				}else{
-					landplayer.inventoryGive(tmp);
-				}
-			}
-		}
+		updateInventory();
 		
 		ArrayList<Ghost> tmplist=new ArrayList<Ghost>();
 		for(Ghost g: ghosts){
@@ -314,6 +287,39 @@ class Isle implements Runnable{
 		}
 		
 		return (canSail(landplayer) && KeyBoard.returnKeyPress()==KeyEvent.VK_S);		
+	}
+	
+	//updates the players inventory
+	private void updateInventory(){
+		Inventory tmp=landplayer.updateInventory();
+		if(tmp!=null){
+			if(insideMapPos(landplayer.getPlaceX(), landplayer.getPlaceY()) &&
+			layout[landplayer.getPlaceX()][landplayer.getPlaceY()]!=LandType.water){
+				//empty placeholding landbjects with inventories should never exist and hence are not concerned
+				if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()]==null){
+					objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=new InventoryHolder();
+					objects[landplayer.getPlaceX()][landplayer.getPlaceY()].inventoryGive(tmp);
+					if(ItemAssembler.craft(objects,landplayer.getPlaceX(), landplayer.getPlaceY())){
+						//item crafted
+					}else if(BuildingAssembler.craft(objects,landplayer.getPlaceX(), landplayer.getPlaceY())){
+						//building built
+						if(objects[landplayer.getPlaceX()][landplayer.getPlaceY()].getClass()==House.class){
+							houses.add((House)objects[landplayer.getPlaceX()][landplayer.getPlaceY()]);
+						}
+					}else if(LightHouse.isProxy(landplayer.getPlaceX(),landplayer.getPlaceY())){
+						//lighthouse item move proximate positions in house,lighthouse
+						objects[landplayer.getPlaceX()][landplayer.getPlaceY()]=null;
+						updateLightHouses(tmp);
+					}
+				}
+				else{
+					landplayer.inventoryGive(tmp);
+				}
+				
+			}else{
+				landplayer.inventoryGive(tmp);
+			}
+		}
 	}
 	
 	public ArrayList<Class> findSeedTrees(int treex, int treey){
@@ -612,7 +618,7 @@ class Isle implements Runnable{
 	}
 	
 	public void tryAddPopulation(){
-		final double rate=0.01;
+		final double rate=0.0175;
 		
 		if(population.size()>1){
 			if(houses.size()*10>population.size()){
@@ -643,62 +649,24 @@ class Isle implements Runnable{
 		return false;
 	}
 	
-}
-
-/**
- *class for growth of trees 
- * 
- */
-class Growth implements Runnable{
-	
-	short[][] distance_to_sea;
-	ArrayList<short[]> growpositions;
-	ArrayList<short[]> diepositions;
-	HashMap<Integer, Double> cachedprobabilities;
-	
-	public Growth(){
-		growpositions=new ArrayList<short[]>();
-		diepositions=new ArrayList<short[]>();
-		cachedprobabilities=new HashMap<Integer, Double>();
-	}
-	
-	public void setDistance(short[][] distance_to_sea){
-		this.distance_to_sea=distance_to_sea;
-		for(int i=0; i<distance_to_sea.length; i++)for(int j=0; j<distance_to_sea[0].length; j++){
-			cachedprobabilities.put(((int)distance_to_sea[i][j]), Math.min(0.45, 1-Math.exp(-0.042*distance_to_sea[i][j])));
-		}
-	}
-	
-	public void run(){
-		
-		for(short i=0; i<distance_to_sea.length; i++)for(short j=0; j<distance_to_sea[i].length; j++){	
-			if(distance_to_sea[i][j]>0){
-					
-				if((new Random()).nextInt(50000)==0){
-					diepositions.add(new short[]{i,j});
+	void updateLightHouses(Inventory inventory){
+		while(true){
+			int[] position=House.getRandomProxyPosition();
+			
+			if(position==null)break;
+			
+			if(isEmpty(position[0], position[1])){
+				if( !isWater(position[0], position[1])){
+					objects[position[0]][position[1]]=new InventoryHolder();
+					objects[position[0]][position[1]].inventoryGive(inventory);
+					break;
 				}
-				
-				if( (new Random()).nextInt(25000)==0 && (new Random()).nextDouble()<treeChance(i,j) ){
-					growpositions.add(new short[]{i,j});
+			}else{
+				if(objects[position[0]][position[1]].getClass()==InventoryHolder.class){
+					objects[position[0]][position[1]].inventoryGive(inventory);
+					break;
 				}
-					
 			}
 		}
 	}
-	
-	public double treeChance(int x, int y){
-		return cachedprobabilities.get((int)distance_to_sea[x][y]);
-	}
-	
-	public ArrayList<short[]> getGrowPos(){
-		ArrayList<short[]> tmp=growpositions;
-		growpositions=new ArrayList<short[]>();
-		return tmp;
-	}
-	
-	public ArrayList<short[]> getDiePos(){
-		ArrayList<short[]> tmp=diepositions;
-		diepositions=new ArrayList<short[]>();
-		return tmp;
-	}	
 }
